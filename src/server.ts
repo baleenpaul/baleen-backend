@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
-import { router as feedRouter } from "./routes/feed";
+import feedRouter from "./routes/feed";
 
 console.log("ENV LOADED:", process.env.BLUESKY_IDENTIFIER, process.env.BLUESKY_APP_PASSWORD);
 
