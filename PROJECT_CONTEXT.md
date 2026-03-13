@@ -10,28 +10,29 @@
 
 - **Goal**: One interface to read, filter, and post across multiple social platforms
 - **Name inspiration**: Baleen whales filter-feed — the app filters your social feeds
-- **Repo**: https://github.com/baleenpaul/baleen-backend
+- **Backend repo**: https://github.com/baleenpaul/baleen-backend
+- **Frontend repo**: https://github.com/baleenpaul/baleen-frontend
+- **Policy repo**: https://github.com/baleenpaul/baleen-policy
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Backend (`baleen-backend`)
-- **Runtime**: Node.js
+- **Runtime**: Node.js v22
 - **Language**: TypeScript
-- **Framework**: (likely Express — confirm)
-- **Package manager**: npm
-- **Key files**: `tsconfig.json`, `package.json`
+- **Framework**: Express (confirm)
+- **Deployed**: Render — https://baleen-backend.onrender.com
 
-### Frontend (`baleen-frontend` — separate repo or TBD)
-- TBD — not yet built or in early stages
+### Frontend (`baleen-frontend`)
+- **Deployed to**: Vercel (not yet done)
+- Stack TBD
 
 ### Platforms Being Integrated
 - ✅ Bluesky (`blueskyClient.ts`)
 - ✅ Mastodon (`mastodonClient.ts`)
-- 🔄 Threads (in progress — required GitHub deployment first)
+- 🔄 Threads (in progress — needs live server for Meta OAuth, now available via Render)
 - ⬜ Twitter/X (TBD)
-- ⬜ Others (TBD)
 
 ---
 
@@ -47,11 +48,12 @@ baleen-backend/
 │   ├── services/
 │   │   ├── blueskyClient.ts    # Bluesky API integration
 │   │   ├── mastodonClient.ts   # Mastodon API integration
-│   │   ├── feedNormalizer.ts   # Normalizes posts across platforms into unified format
-│   │   └── filterEngine.ts     # Intelligent filtering logic
+│   │   ├── feedNormalizer.ts   # Normalizes posts across platforms
+│   │   └── filterEngine.ts    # Intelligent filtering logic
 │   └── utils/
-│       └── types.ts            # Shared TypeScript types/interfaces
-├── .env                        # API keys and secrets (not committed)
+│       └── types.ts            # Shared TypeScript types
+├── PROJECT_CONTEXT.md
+├── .env                        # API keys (not committed)
 ├── .gitignore
 ├── package.json
 ├── package-lock.json
@@ -68,54 +70,43 @@ baleen-backend/
 - [x] Feed normalizer — unified post format across platforms
 - [x] Filter engine — intelligent filtering logic
 - [x] Feed route (`/feed`)
-- [x] Backend pushed to GitHub (`main` branch, latest: `4c2119b`)
-- [x] node_modules excluded / cleaned up in git history
+- [x] Backend pushed to GitHub (`main` branch)
+- [x] PROJECT_CONTEXT.md added to repo
+- [x] Removed credentials from server logs (console.log deleted from server.ts)
+- [x] Backend deployed to Render — https://baleen-backend.onrender.com
+- [x] Bluesky and Mastodon credentials rotated and secured in Render env vars
 
 ---
 
-## 🔄 In Progress
+## 🔄 Next Steps (Priority Order)
 
-- [ ] **Threads integration** — was the reason for getting backend onto GitHub (Meta requires a publicly accessible server for Threads API webhooks/auth)
-- [ ] **Deploy backend to Render**
-- [ ] **Deploy frontend to Vercel** (frontend may not be started yet)
-
----
-
-## 📋 Next Steps (Priority Order)
-
-1. **Deploy backend to Render**
-   - Connect GitHub repo to Render
-   - Set environment variables (`.env` values)
-   - Confirm build/start commands (`tsc && node dist/server.js` or similar)
-2. **Deploy frontend to Vercel** (once frontend exists)
-3. **Continue Threads integration**
-   - Meta requires app review + live server for Threads API
-   - Need callback/webhook URL from Render deployment
-4. **Cross-posting feature**
-5. **UI/Frontend build** (if not started)
+1. **Threads integration** — Meta requires live HTTPS server for OAuth ✅ now satisfied by Render URL
+2. **Deploy frontend to Vercel**
+3. **Cross-posting feature**
+4. **UI/Frontend build**
 
 ---
 
 ## 🔑 Key Decisions & Notes
 
-- Backend separated from frontend (two repos or monorepo — confirm)
-- `feedNormalizer.ts` creates a unified post schema so the frontend only deals with one data format regardless of platform
-- `filterEngine.ts` is the "baleen" core — filters content intelligently (exact logic TBD/to document)
-- Threads API needs a live HTTPS server to complete OAuth — hence the GitHub push and Render deploy being prioritised
+- Backend on Render, Frontend on Vercel (two separate deploys)
+- `feedNormalizer.ts` creates a unified post schema regardless of platform
+- `filterEngine.ts` is the "baleen" core — intelligent content filtering
+- Threads API needs a live HTTPS callback URL — now satisfied by Render deploy
+- Mastodon app registered at mastodon.social with read/write/follow scopes, website set to Render URL
 
 ---
 
 ## 🌍 Environment Variables (keys only — never commit values)
 
 ```
-# Add known .env keys here as they're created
-# e.g.
-# BLUESKY_IDENTIFIER=
-# BLUESKY_PASSWORD=
-# MASTODON_ACCESS_TOKEN=
-# MASTODON_INSTANCE_URL=
-# THREADS_APP_ID=
-# THREADS_APP_SECRET=
+BLUESKY_IDENTIFIER=
+BLUESKY_APP_PASSWORD=
+MASTODON_URL=
+MASTODON_ACCESS_TOKEN=
+THREADS_APP_ID=
+THREADS_APP_SECRET=
+THREADS_ACCESS_TOKEN=
 ```
 
 ---
@@ -124,7 +115,7 @@ baleen-backend/
 
 | Date | What was done |
 |------|--------------|
-| Mar 13 2026 | Backend pushed to GitHub. node_modules cleanup. PROJECT_CONTEXT.md created. |
+| Mar 13 2026 | Backend pushed to GitHub. PROJECT_CONTEXT.md created. Deployed backend to Render. Removed credential logging. Rotated Bluesky + Mastodon secrets. |
 
 ---
 
