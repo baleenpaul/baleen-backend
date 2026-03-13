@@ -5,7 +5,6 @@ import express from "express";
 import cors from "cors";
 import feedRouter from "./routes/feed";
 
-console.log("ENV LOADED:", process.env.BLUESKY_IDENTIFIER, process.env.BLUESKY_APP_PASSWORD);
 
 const app = express();
 app.use(cors());
