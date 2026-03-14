@@ -28,7 +28,7 @@
 ### Platforms Being Integrated
 - ✅ Bluesky (`blueskyClient.ts`)
 - ✅ Mastodon (`mastodonClient.ts`)
-- 🔄 Threads (in progress — needs live server for Meta OAuth)
+- 🔄 Threads (in progress — OAuth flow being implemented)
 - ⬜ Twitter/X (TBD)
 ---
 ## 📁 Backend File Structure
@@ -38,10 +38,12 @@ baleen-backend/
 │   ├── config.ts               # App configuration
 │   ├── server.ts               # Entry point / Express server
 │   ├── routes/
-│   │   └── feed.ts             # Feed API routes
+│   │   ├── feed.ts             # Feed API routes
+│   │   └── auth.ts             # OAuth routes (Threads)
 │   ├── services/
 │   │   ├── blueskyClient.ts    # Bluesky API integration
 │   │   ├── mastodonClient.ts   # Mastodon API integration
+│   │   ├── threadsClient.ts    # Threads API integration
 │   │   ├── feedNormalizer.ts   # Normalizes posts across platforms
 │   │   └── filterEngine.ts    # Intelligent filtering logic
 │   └── utils/
@@ -69,15 +71,29 @@ baleen-backend/
 - [x] Frontend code (Next.js + Tailwind) built and pushed to GitHub
 - [x] Frontend deployed to Netlify
 - [x] TypeScript build errors fixed
-- [x] Frontend connected to backend API (https://baleen-backend.onrender.com)
+- [x] Frontend connected to backend API
 - [x] Feed loading live from backend ✅
+- [x] Threads OAuth service created (`threadsClient.ts`)
+- [x] OAuth routes created (`auth.ts`)
+- [x] Meta app configured with redirect URIs
+- [x] Environment variables added to Render (THREADS_APP_ID, THREADS_APP_SECRET)
+---
+## 🔄 In Progress
+- 🔄 **Threads OAuth flow** — Auth routes created but `/auth/threads/login` returning 404
+  - Created `threadsClient.ts` with OAuth methods
+  - Created `auth.ts` with routes: `/threads/login`, `/threads/callback`, `/threads/uninstall`, `/threads/delete`
+  - Meta app configured at: https://developers.meta.com/
+  - Added `node-fetch` dependency
+  - Routes imported and registered in `server.ts`
+  - **Current issue**: Route not accessible — debugging route registration
+  - Next: Verify route compilation and restart service
 ---
 ## 🔄 Next Steps (Priority Order)
-1. **Threads integration** — Complete Meta OAuth flow
-2. **Cross-posting feature** — Allow users to post to multiple platforms
-3. **UI refinements** — Polish animations and user experience
-4. **Twitter/X integration** — Add X/Twitter to platform list
-5. **Custom domain** — Deploy to custom domain (optional)
+1. **Debug Threads OAuth route** — Fix 404 error on `/auth/threads/login`
+2. **Complete Threads OAuth flow** — Test full login → token exchange → feed access
+3. **Cross-posting feature** — Allow users to post to multiple platforms
+4. **UI refinements** — Polish animations and user experience
+5. **Twitter/X integration** — Add X/Twitter to platform list
 ---
 ## 🔑 Key Decisions & Notes
 - Backend on Render, Frontend on Netlify (two separate deploys)
@@ -86,6 +102,10 @@ baleen-backend/
 - `filterEngine.ts` provides intelligent content filtering (deduplication, muting, highlighting)
 - Frontend features: Like/repost tracking, deduplication toggle, filter settings menu
 - Beautiful whale-themed splash screen with animated baleen filter visualization
+- Threads OAuth setup:
+  - App ID: 1581961063067972
+  - Redirect URI: https://baleen-backend.onrender.com/auth/threads/callback
+  - Scopes: threads_basic_access, threads_content_publish
 ---
 ## 🌍 Environment Variables (keys only — never commit values)
 ```
@@ -93,16 +113,24 @@ BLUESKY_IDENTIFIER=
 BLUESKY_APP_PASSWORD=
 MASTODON_URL=
 MASTODON_ACCESS_TOKEN=
-THREADS_APP_ID=
+THREADS_APP_ID=1581961063067972
 THREADS_APP_SECRET=
-THREADS_ACCESS_TOKEN=
+FRONTEND_URL=https://baleen-frontend.netlify.app
 ```
 ---
 ## 📅 Session Log
 | Date | What was done |
 |------|--------------|
 | Mar 13 2026 | Backend scaffolded, Bluesky & Mastodon integrated, deployed to Render. |
-| Mar 14 2026 | Frontend built with Next.js. Deployed to Netlify. Fixed build config and TypeScript errors. Connected frontend to backend API. Feed now loading live at https://baleen-frontend.netlify.app ✅ |
+| Mar 14 2026 | Frontend built with Next.js, deployed to Netlify, connected to backend. Feed loading live. Started Threads OAuth integration: created threadsClient.ts, auth.ts routes, configured Meta app, added env vars to Render. Debugging route 404 issue. |
+---
+## 🐛 Known Issues
+- **Threads OAuth route 404**: `/auth/threads/login` returning "Cannot GET /auth/threads/login"
+  - Routes are in `auth.ts` and imported in `server.ts`
+  - Files compiled to `dist/routes/auth.js`
+  - Server is running but route not accessible
+  - Likely: Route registration issue or server not reloading with changes
+
 ---
 *Update this file at the end of every session. Ask Claude: "Update PROJECT_CONTEXT.md to reflect what we did today."*
 ```
@@ -114,7 +142,7 @@ Push this update:
 git add .
 ```
 ```
-git commit -m "Update PROJECT_CONTEXT.md - frontend and backend fully connected and live"
+git commit -m "Update PROJECT_CONTEXT.md - Threads OAuth in progress, debugging route issue"
 ```
 ```
 git push
