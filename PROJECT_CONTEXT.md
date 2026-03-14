@@ -16,12 +16,12 @@
 ### Backend (`baleen-backend`)
 - **Runtime**: Node.js v22
 - **Language**: TypeScript
-- **Framework**: Express (confirm)
+- **Framework**: Express
 - **Deployed**: Render — https://baleen-backend.onrender.com
 ### Frontend (`baleen-frontend`)
 - **Framework**: Next.js 14.2.35 with React 18 and Tailwind CSS
 - **Deployed to**: Netlify — https://baleen-frontend.netlify.app
-- **Status**: Deployed but needs debugging (404 error on site load — likely build output issue)
+- **Status**: ✅ Live and working
 ### Platforms Being Integrated
 - ✅ Bluesky (`blueskyClient.ts`)
 - ✅ Mastodon (`mastodonClient.ts`)
@@ -67,23 +67,25 @@ baleen-backend/
 - [x] Frontend code (Next.js + Tailwind) pushed to GitHub
 - [x] netlify.toml created with build configuration
 - [x] next.config.mjs updated for static export
-- [x] Frontend deployed to Netlify
+- [x] Frontend deployed to Netlify — ✅ Now LIVE at https://baleen-frontend.netlify.app
+- [x] TypeScript build errors fixed (Set types, state annotations)
 ---
 ## 🔄 Next Steps (Priority Order)
-1. **Fix frontend 404 error** — Debug Netlify build output (likely `.next` folder issue)
+1. **Connect frontend to backend API** — Update fetch URLs from localhost:5000 to Render backend
 2. **Threads integration** — Meta requires live HTTPS server for OAuth ✅ now satisfied by Render URL
-3. **Connect frontend to backend API** — Frontend needs to call https://baleen-backend.onrender.com/feed
-4. **Cross-posting feature**
-5. **Full UI/Frontend build**
+3. **Cross-posting feature**
+4. **Full UI/Frontend refinements**
+5. **Deploy to production domain**
 ---
 ## 🔑 Key Decisions & Notes
 - Backend on Render, Frontend on Netlify (two separate deploys) — Netlify chosen over Vercel
-- Frontend is Next.js with Tailwind CSS for styling
+- Frontend is Next.js with Tailwind CSS and Lucide icons for styling
 - `feedNormalizer.ts` creates a unified post schema regardless of platform
 - `filterEngine.ts` is the "baleen" core — intelligent content filtering
 - Threads API needs a live HTTPS callback URL — now satisfied by Render deploy
 - Mastodon app registered at mastodon.social with read/write/follow scopes, website set to Render URL
-- netlify.toml configured to build Next.js and export static files
+- netlify.toml configured to build Next.js and export static files to `/out`
+- Frontend currently points to `http://localhost:5000` for API calls — needs update to production backend URL
 ---
 ## 🌍 Environment Variables (keys only — never commit values)
 ```
@@ -100,6 +102,21 @@ THREADS_ACCESS_TOKEN=
 | Date | What was done |
 |------|--------------|
 | Mar 13 2026 | Backend pushed to GitHub. PROJECT_CONTEXT.md created. Deployed backend to Render. Removed credential logging. Rotated Bluesky + Mastodon secrets. |
-| Mar 14 2026 | Switched frontend deployment from Vercel to Netlify. Updated PROJECT_CONTEXT.md with deployment change. Pushed frontend code to GitHub. Created netlify.toml and updated next.config.mjs for Next.js static export. Frontend now deployed to Netlify (debugging 404 error). |
+| Mar 14 2026 | Switched frontend deployment from Vercel to Netlify. Updated PROJECT_CONTEXT.md with deployment change. Pushed frontend code to GitHub. Created netlify.toml and updated next.config.mjs for Next.js static export. Fixed build configuration and TypeScript type annotations. Frontend now LIVE at https://baleen-frontend.netlify.app |
 ---
 *Update this file at the end of every session. Ask Claude: "Update PROJECT_CONTEXT.md to reflect what we did today."*
+```
+
+---
+
+Now push this update:
+
+Run in terminal:
+```
+git add .
+```
+```
+git commit -m "Update PROJECT_CONTEXT.md - frontend now live on Netlify"
+```
+```
+git push
