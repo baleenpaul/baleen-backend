@@ -11,6 +11,7 @@
 - **Backend repo**: https://github.com/baleenpaul/baleen-backend
 - **Frontend repo**: https://github.com/baleenpaul/baleen-frontend
 - **Policy repo**: https://github.com/baleenpaul/baleen-policy
+- **Live site**: https://baleen-frontend.netlify.app
 ---
 ## 🛠 Tech Stack
 ### Backend (`baleen-backend`)
@@ -18,14 +19,16 @@
 - **Language**: TypeScript
 - **Framework**: Express
 - **Deployed**: Render — https://baleen-backend.onrender.com
+
 ### Frontend (`baleen-frontend`)
 - **Framework**: Next.js 14.2.35 with React 18 and Tailwind CSS
 - **Deployed to**: Netlify — https://baleen-frontend.netlify.app
-- **Status**: ✅ Live and working
+- **Status**: ✅ Live and fully functional
+
 ### Platforms Being Integrated
 - ✅ Bluesky (`blueskyClient.ts`)
 - ✅ Mastodon (`mastodonClient.ts`)
-- 🔄 Threads (in progress — needs live server for Meta OAuth, now available via Render)
+- 🔄 Threads (in progress — needs live server for Meta OAuth)
 - ⬜ Twitter/X (TBD)
 ---
 ## 📁 Backend File Structure
@@ -60,32 +63,29 @@ baleen-backend/
 - [x] Feed route (`/feed`)
 - [x] Backend pushed to GitHub (`main` branch)
 - [x] PROJECT_CONTEXT.md added to repo
-- [x] Removed credentials from server logs (console.log deleted from server.ts)
-- [x] Backend deployed to Render — https://baleen-backend.onrender.com
-- [x] Bluesky and Mastodon credentials rotated and secured in Render env vars
-- [x] Frontend deployment switched from Vercel to Netlify
-- [x] Frontend code (Next.js + Tailwind) pushed to GitHub
-- [x] netlify.toml created with build configuration
-- [x] next.config.mjs updated for static export
-- [x] Frontend deployed to Netlify — ✅ Now LIVE at https://baleen-frontend.netlify.app
-- [x] TypeScript build errors fixed (Set types, state annotations)
+- [x] Removed credentials from server logs
+- [x] Backend deployed to Render
+- [x] Bluesky and Mastodon credentials secured in Render env vars
+- [x] Frontend code (Next.js + Tailwind) built and pushed to GitHub
+- [x] Frontend deployed to Netlify
+- [x] TypeScript build errors fixed
+- [x] Frontend connected to backend API (https://baleen-backend.onrender.com)
+- [x] Feed loading live from backend ✅
 ---
 ## 🔄 Next Steps (Priority Order)
-1. **Connect frontend to backend API** — Update fetch URLs from localhost:5000 to Render backend
-2. **Threads integration** — Meta requires live HTTPS server for OAuth ✅ now satisfied by Render URL
-3. **Cross-posting feature**
-4. **Full UI/Frontend refinements**
-5. **Deploy to production domain**
+1. **Threads integration** — Complete Meta OAuth flow
+2. **Cross-posting feature** — Allow users to post to multiple platforms
+3. **UI refinements** — Polish animations and user experience
+4. **Twitter/X integration** — Add X/Twitter to platform list
+5. **Custom domain** — Deploy to custom domain (optional)
 ---
 ## 🔑 Key Decisions & Notes
-- Backend on Render, Frontend on Netlify (two separate deploys) — Netlify chosen over Vercel
-- Frontend is Next.js with Tailwind CSS and Lucide icons for styling
-- `feedNormalizer.ts` creates a unified post schema regardless of platform
-- `filterEngine.ts` is the "baleen" core — intelligent content filtering
-- Threads API needs a live HTTPS callback URL — now satisfied by Render deploy
-- Mastodon app registered at mastodon.social with read/write/follow scopes, website set to Render URL
-- netlify.toml configured to build Next.js and export static files to `/out`
-- Frontend currently points to `http://localhost:5000` for API calls — needs update to production backend URL
+- Backend on Render, Frontend on Netlify (two separate deploys)
+- Frontend API calls point to: `https://baleen-backend.onrender.com`
+- `feedNormalizer.ts` creates unified post schema across platforms
+- `filterEngine.ts` provides intelligent content filtering (deduplication, muting, highlighting)
+- Frontend features: Like/repost tracking, deduplication toggle, filter settings menu
+- Beautiful whale-themed splash screen with animated baleen filter visualization
 ---
 ## 🌍 Environment Variables (keys only — never commit values)
 ```
@@ -101,22 +101,20 @@ THREADS_ACCESS_TOKEN=
 ## 📅 Session Log
 | Date | What was done |
 |------|--------------|
-| Mar 13 2026 | Backend pushed to GitHub. PROJECT_CONTEXT.md created. Deployed backend to Render. Removed credential logging. Rotated Bluesky + Mastodon secrets. |
-| Mar 14 2026 | Switched frontend deployment from Vercel to Netlify. Updated PROJECT_CONTEXT.md with deployment change. Pushed frontend code to GitHub. Created netlify.toml and updated next.config.mjs for Next.js static export. Fixed build configuration and TypeScript type annotations. Frontend now LIVE at https://baleen-frontend.netlify.app |
+| Mar 13 2026 | Backend scaffolded, Bluesky & Mastodon integrated, deployed to Render. |
+| Mar 14 2026 | Frontend built with Next.js. Deployed to Netlify. Fixed build config and TypeScript errors. Connected frontend to backend API. Feed now loading live at https://baleen-frontend.netlify.app ✅ |
 ---
 *Update this file at the end of every session. Ask Claude: "Update PROJECT_CONTEXT.md to reflect what we did today."*
 ```
 
 ---
 
-Now push this update:
-
-Run in terminal:
+Push this update:
 ```
 git add .
 ```
 ```
-git commit -m "Update PROJECT_CONTEXT.md - frontend now live on Netlify"
+git commit -m "Update PROJECT_CONTEXT.md - frontend and backend fully connected and live"
 ```
 ```
 git push
