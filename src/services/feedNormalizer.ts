@@ -9,7 +9,7 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
     const post = item.post || item;
 
     // DEBUG: Log the raw post structure
-    console.log("RAW BLUESKY POST:", JSON.stringify(post, null, 2).substring(0, 500));
+    console.log("RAW BLUESKY POST HAS EMBED:", !!post.embed, "EMBED:", post.embed);
 
     // Extract images from embed
     const images: string[] = [];
