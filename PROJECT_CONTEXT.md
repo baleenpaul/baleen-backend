@@ -1,105 +1,215 @@
-# Baleen — Project Context & Progress Log
-> **Purpose of this file**: Paste this at the start of any new Claude conversation to quickly restore context and continue development without losing progress.
->
-> **IMPORTANT: When updating this file, always provide the FULL file content (not snippets), and always specify which file to change.**
+# 🐋 Project Context & Progress Log - Baleen
+
+**Last Updated:** March 15, 2026, 4:40 PM UTC
 
 ---
+
 ## 🐋 Project Overview
-**Baleen** is a unified, beautifully-designed social media aggregator and cross-poster with intelligent filtering.
-- **Goal**: One interface to read, filter, and post across multiple social platforms
-- **Name inspiration**: Baleen whales filter-feed — the app filters your social feeds
-- **Backend repo**: https://github.com/baleenpaul/baleen-backend
-- **Frontend repo**: https://github.com/baleenpaul/baleen-frontend
-- **Policy repo**: https://github.com/baleenpaul/baleen-policy
+
+Baleen is a unified, beautifully-designed social media aggregator and cross-poster with intelligent filtering.
+
+* **Goal:** One interface to read, filter, and post across multiple social platforms
+* **Name inspiration:** Baleen whales filter-feed — the app filters your social feeds
+* **Backend repo:** https://github.com/baleenpaul/baleen-backend
+* **Frontend repo:** https://github.com/baleenpaul/baleen-frontend
+* **Policy repo:** https://github.com/baleenpaul/baleen-policy
+* **Live site:** https://baleen-frontend.netlify.app
+
 ---
+
 ## 🛠 Tech Stack
+
 ### Backend (`baleen-backend`)
-- **Runtime**: Node.js v22
-- **Language**: TypeScript
-- **Framework**: Express (confirm)
-- **Deployed**: Render — https://baleen-backend.onrender.com
+* **Runtime:** Node.js v22
+* **Language:** TypeScript
+* **Framework:** Express
+* **Deployed:** Render — https://baleen-backend.onrender.com
+* **Status:** ✅ Live and fully functional
+
 ### Frontend (`baleen-frontend`)
-- **Framework**: Next.js 14.2.35 with React 18 and Tailwind CSS
-- **Deployed to**: Netlify — https://baleen-frontend.netlify.app
-- **Status**: Deployed but needs debugging (404 error on site load — likely build output issue)
-### Platforms Being Integrated
-- ✅ Bluesky (`blueskyClient.ts`)
-- ✅ Mastodon (`mastodonClient.ts`)
-- 🔄 Threads (in progress — needs live server for Meta OAuth, now available via Render)
-- ⬜ Twitter/X (TBD)
+* **Framework:** Next.js 14.2.35 with React 18 and Tailwind CSS
+* **Deployed to:** Netlify — https://baleen-frontend.netlify.app
+* **Status:** ✅ Live and fully functional
+
 ---
-## 📁 Backend File Structure
+
+## 📱 Platform Integration Status
+
+### ✅ Bluesky
+* **Client:** `src/services/blueskyClient.ts`
+* **Status:** Fully integrated and working
+* **Authentication:** Service account (environment-based credentials)
+* **Feed:** Fetching + normalizing ✅
+* **Actions:** Like, repost ✅
+
+### ✅ Mastodon
+* **Client:** `src/services/mastodonClient.ts`
+* **Status:** Fully integrated and working
+* **Authentication:** Static access token
+* **Feed:** Fetching + normalizing ✅
+* **Actions:** Like, repost ✅
+
+### 🔄 Threads (In Progress - OAuth Flow)
+* **Client:** `src/services/threadsClient.ts`
+* **Status:** OAuth routing **fixed**, awaiting Meta approval
+* **Authentication:** OAuth 2.0 flow
+* **Routes:** `/auth/threads/login`, `/auth/threads/callback` ✅
+
+---
+
+## 🔧 Recent Fixes: Threads OAuth Routing Issue
+
+### Root Cause Identified
+The Threads OAuth was failing due to **multiple configuration issues**:
+
+1. **Wrong App ID in `.env`**
+   - Was using: Profile URL (`https://www.threads.com/@builtbadpaul`)
+   - Should be: Threads App ID (`1581961063067972`)
+   - **Status:** ✅ Fixed
+
+2. **Missing Token Persistence**
+   - Token was acquired but not stored for API requests
+   - **Status:** ✅ Fixed in `src/routes/auth.ts`
+
+3. **Meta App Credentials Mismatch**
+   - Initially used general Meta App ID instead of Threads-specific ID
+   - **Status:** ✅ Corrected to use Threads App ID
+
+4. **Missing OAuth Redirect URI Configuration**
+   - Meta required full callback URL registered
+   - **Status:** ✅ Added to Meta app settings
+
+5. **Permissions Not Activated**
+   - `threads_basic_access` and `threads_content_publish` were "Ready for testing"
+   - Required Tech Provider verification to submit for review
+   - **Status:** 🔄 **Tech Provider verification submitted** (awaiting Meta approval)
+
+### Files Updated
+* **`.env` & `.env.save`** — Updated with correct Threads App ID and secret
+* **`src/routes/auth.ts`** — Fixed OAuth callback with:
+  - Proper token persistence (secure HTTP-only cookie)
+  - Error handling for Threads error responses
+  - Better logging for debugging
+  - Added logout endpoint
+* **Render Environment** — Variables updated with correct credentials
+
+### Current Status
+- ✅ OAuth redirect working (user sees Threads login page)
+- ✅ User authentication succeeds
+- ✅ Test user role assigned and accepted
+- 🔄 **Awaiting Meta Tech Provider approval** (1-7 business days)
+- ⏳ Once approved: Will submit permissions for App Review
+- ⏳ Once approved: Full OAuth flow will be operational
+
+---
+
+## 🚀 Next Steps
+
+### Immediate (While waiting for Meta approval)
+1. **Integrate Threads feed into `/feed` endpoint**
+   - Create `normalizeThreadsFeed()` in `feedNormalizer.ts`
+   - Add Threads feed fetching to `/feed` route
+   - Test with mock data if needed
+
+2. **Add Threads actions support**
+   - Extend `feed.ts` to handle Threads like/repost in POST endpoints
+
+3. **Frontend integration**
+   - Add "Connect Threads" button to auth UI
+   - Handle `?threads=connected` query param
+   - Display Threads posts in unified feed
+
+### When Meta Approval Arrives
+1. Activate Threads OAuth fully
+2. End-to-end testing
+3. Deploy updates
+
+### Future Platforms
+* ⬜ Twitter/X (TBD)
+* Any others?
+
+---
+
+## 📋 Architecture Notes
+
+### Authentication Patterns
+- **Bluesky:** Service account (static credentials, no OAuth)
+- **Mastodon:** Static token (no OAuth)
+- **Threads:** User OAuth flow (token stored in secure cookie)
+
+### Feed Normalization
+All feeds normalize to `FeedItem[]` type in `utils/types.ts`:
+```typescript
+interface FeedItem {
+  platform: "bluesky" | "mastodon" | "threads";
+  id: string;
+  text: string;
+  author: string;
+  authorHandle: string;
+  timestamp: string;
+  images: string[];
+  links: string[];
+  likeCount: number;
+  repostCount: number;
+  liked: boolean;
+  reposted: boolean;
+  quotedPost: any | null;
+}
 ```
-baleen-backend/
-├── src/
-│   ├── config.ts               # App configuration
-│   ├── server.ts               # Entry point / Express server
-│   ├── routes/
-│   │   └── feed.ts             # Feed API routes
-│   ├── services/
-│   │   ├── blueskyClient.ts    # Bluesky API integration
-│   │   ├── mastodonClient.ts   # Mastodon API integration
-│   │   ├── feedNormalizer.ts   # Normalizes posts across platforms
-│   │   └── filterEngine.ts    # Intelligent filtering logic
-│   └── utils/
-│       └── types.ts            # Shared TypeScript types
-├── PROJECT_CONTEXT.md
-├── .env                        # API keys (not committed)
-├── .gitignore
-├── package.json
-├── package-lock.json
-└── tsconfig.json
-```
+
+### Filtering Engine
+- `filterEngine.ts` applies muting and highlighting
+- Mute keywords: "trump", "bitcoin", "football"
+- Highlight keywords: "ireland", "climate", "housing"
+- Can be made configurable later
+
 ---
-## ✅ Completed
-- [x] Backend project scaffolded with TypeScript
-- [x] Bluesky client service built
-- [x] Mastodon client service built
-- [x] Feed normalizer — unified post format across platforms
-- [x] Filter engine — intelligent filtering logic
-- [x] Feed route (`/feed`)
-- [x] Backend pushed to GitHub (`main` branch)
-- [x] PROJECT_CONTEXT.md added to repo
-- [x] Removed credentials from server logs (console.log deleted from server.ts)
-- [x] Backend deployed to Render — https://baleen-backend.onrender.com
-- [x] Bluesky and Mastodon credentials rotated and secured in Render env vars
-- [x] Frontend deployment switched from Vercel to Netlify
-- [x] Frontend code (Next.js + Tailwind) pushed to GitHub
-- [x] netlify.toml created with build configuration
-- [x] next.config.mjs updated for static export
-- [x] Frontend deployed to Netlify
+
+## 🔐 Security Notes
+
+### Secret Management
+- **GitGuardian alert:** App secret exposed in commit (March 15, 2026 12:39 UTC)
+- ✅ **Fixed:** Secret reset in Meta, updated in Render and local `.env`
+- All credentials now properly managed
+
+### OAuth Security
+- CSRF protection via state parameter ✅
+- Secure HTTP-only cookies ✅
+- Token expiration handling needed (TODO)
+
 ---
-## 🔄 Next Steps (Priority Order)
-1. **Fix frontend 404 error** — Debug Netlify build output (likely `.next` folder issue)
-2. **Threads integration** — Meta requires live HTTPS server for OAuth ✅ now satisfied by Render URL
-3. **Connect frontend to backend API** — Frontend needs to call https://baleen-backend.onrender.com/feed
-4. **Cross-posting feature**
-5. **Full UI/Frontend build**
+
+## 📝 Known Issues & TODOs
+
+### Threads OAuth
+- [ ] Wait for Meta Tech Provider approval (1-7 days)
+- [ ] Submit permissions for App Review once approved
+- [ ] Full end-to-end testing once approved
+
+### General
+- [ ] Token refresh logic for Threads (access tokens expire)
+- [ ] Database integration for persistent token storage
+- [ ] Rate limiting on API endpoints
+- [ ] Better error messages for users
+
 ---
-## 🔑 Key Decisions & Notes
-- Backend on Render, Frontend on Netlify (two separate deploys) — Netlify chosen over Vercel
-- Frontend is Next.js with Tailwind CSS for styling
-- `feedNormalizer.ts` creates a unified post schema regardless of platform
-- `filterEngine.ts` is the "baleen" core — intelligent content filtering
-- Threads API needs a live HTTPS callback URL — now satisfied by Render deploy
-- Mastodon app registered at mastodon.social with read/write/follow scopes, website set to Render URL
-- netlify.toml configured to build Next.js and export static files
+
+## 🎯 Success Metrics
+
+- ✅ Bluesky feed working
+- ✅ Mastodon feed working
+- 🔄 Threads OAuth routing fixed (awaiting approval)
+- ⏳ Threads feed integration (pending OAuth approval)
+- ⬜ Twitter/X integration (TBD)
+
 ---
-## 🌍 Environment Variables (keys only — never commit values)
-```
-BLUESKY_IDENTIFIER=
-BLUESKY_APP_PASSWORD=
-MASTODON_URL=
-MASTODON_ACCESS_TOKEN=
-THREADS_APP_ID=
-THREADS_APP_SECRET=
-THREADS_ACCESS_TOKEN=
-```
+
+## 📞 Contact & Notes
+
+**Developer:** Paul McNally (@builtbadpaul on Threads)  
+**Last Session:** Resolved Threads OAuth routing — submitted Tech Provider verification  
+**Next Session:** Check Meta approval status, integrate Threads feed, or work on other features
+
 ---
-## 📅 Session Log
-| Date | What was done |
-|------|--------------|
-| Mar 13 2026 | Backend pushed to GitHub. PROJECT_CONTEXT.md created. Deployed backend to Render. Removed credential logging. Rotated Bluesky + Mastodon secrets. |
-| Mar 14 2026 | Switched frontend deployment from Vercel to Netlify. Updated PROJECT_CONTEXT.md with deployment change. Pushed frontend code to GitHub. Created netlify.toml and updated next.config.mjs for Next.js static export. Frontend now deployed to Netlify (debugging 404 error). |
----
-*Update this file at the end of every session. Ask Claude: "Update PROJECT_CONTEXT.md to reflect what we did today."*
+
+**🐋 Keep building!**
