@@ -1,6 +1,5 @@
 import { FeedItem } from "../utils/types";
 
-// AI detection keywords - English only
 const AI_KEYWORDS = [
   "ai generated",
   "ai slop",
@@ -23,8 +22,8 @@ const AI_KEYWORDS = [
 ];
 
 export interface AISlop Detection {
-  score: number; // 0-100
-  evidence: string[]; // which keywords found
+  score: number;
+  evidence: string[];
   confidence: "low" | "medium" | "high";
   commentsChecked: number;
   matchesFound: number;
@@ -32,21 +31,16 @@ export interface AISlop Detection {
 
 export interface AIFilterSettings {
   enabled: boolean;
-  sensitivity: number; // 0-100 slider
+  sensitivity: number;
   whitelist: WhitelistRule[];
 }
 
 export interface WhitelistRule {
   type: "author" | "hashtag";
-  value: string; // "@paulknally" or "#ai_research"
+  value: string;
   reason: string;
 }
 
-/**
- * Detect AI slop from comments
- * @param comments Array of comment texts
- * @returns Detection object with score and evidence
- */
 export function detectAISlopFromComments(
   comments: string[]
 ): AISlop Detection {
@@ -54,10 +48,9 @@ export function detectAISlopFromComments(
   let matches = 0;
   const evidence: string[] = [];
 
-  // Check each comment for AI keywords
   firstTen.forEach((comment, index) => {
     const lowerComment = comment.toLowerCase();
-    
+
     AI_KEYWORDS.forEach((keyword) => {
       if (lowerComment.includes(keyword)) {
         matches++;
@@ -66,13 +59,9 @@ export function detectAISlopFromComments(
     });
   });
 
-  // Calculate score as percentage
-  // Max possible matches: 10 comments × 17 keywords = 170
-  // But realistically, cap at 5 per comment
   const maxPossible = Math.min(firstTen.length * 5, 50);
   const score = Math.min((matches / maxPossible) * 100, 100);
 
-  // Determine confidence level
   let confidence: "low" | "medium" | "high";
   if (score > 60) {
     confidence = "high";
@@ -91,71 +80,43 @@ export function detectAISlopFromComments(
   };
 }
 
-/**
- * Map slider (0-100) to filter threshold
- * Lower slider = more sensitive filtering
- * Higher slider = less filtering
- */
 export function getSensitivityThreshold(sensitivity: number): number {
-  // sensitivity 0 → threshold 10 (very sensitive, filter low scores)
-  // sensitivity 50 → threshold 50 (medium)
-  // sensitivity 100 → threshold 90 (lenient, only filter high scores)
   return 10 + sensitivity * 0.8;
 }
 
-/**
- * Check if a post should be whitelisted
- */
 export function shouldWhitelist(
   post: FeedItem,
   rules: WhitelistRule[]
 ): boolean {
   return rules.some((rule) => {
     if (rule.type === "author") {
-      // Match by handle (with or without @)
       const handle = rule.value.startsWith("@") 
         ? rule.value.slice(1) 
         : rule.value;
       return post.authorHandle === handle;
     }
-    
+
     if (rule.type === "hashtag") {
-      // Match hashtag in post text
       const hashtag = rule.value.startsWith("#") 
         ? rule.value 
         : `#${rule.value}`;
       return post.text.toLowerCase().includes(hashtag.toLowerCase());
     }
-    
+
     return false;
   });
 }
 
-/**
- * Extend FeedItem with AI slop data
- */
 export interface FeedItemWithAIScore extends FeedItem {
-  aiScore?: number; // 0-100
+  aiScore?: number;
   aiEvidence?: string[];
   aiConfidence?: "low" | "medium" | "high";
   aiFiltered?: boolean;
 }
 
-/**
- * Mock function - replace with real comment fetching
- * For each platform, you'll fetch actual comments
- */
 export async function fetchComments(
   postId: string,
   platform: string
 ): Promise<string[]> {
-  // TODO: Implement actual comment fetching per platform
-  // For now, return empty (will add platform-specific logic)
-  
-  // Bluesky: use getBlueskyComments(postId)
-  // Mastodon: use getMastodonComments(postId)
-  // Threads: use getThreadsComments(postId)
-  // etc.
-  
   return [];
 }
