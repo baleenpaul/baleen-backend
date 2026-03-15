@@ -8,17 +8,15 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
   return rawFeed.map((item) => {
     const post = item.post || item;
 
-    // DEBUG: Log the raw post structure
-    console.log("RAW BLUESKY POST HAS EMBED:", !!post.embed, "EMBED:", post.embed);
-
     // Extract images from embed
     const images: string[] = [];
     if (post.embed && post.embed.images && Array.isArray(post.embed.images)) {
       post.embed.images.forEach((img: any) => {
-        if (img.image?.thumb) {
-          images.push(img.image.thumb);
-        } else if (img.image?.fullsize) {
-          images.push(img.image.fullsize);
+        // Images have thumb or fullsize directly (not nested under img.image)
+        if (img.thumb) {
+          images.push(img.thumb);
+        } else if (img.fullsize) {
+          images.push(img.fullsize);
         }
       });
     }
