@@ -1,96 +1,158 @@
 import { FeedItem } from "../utils/types";
 
-export function normalizeBskyFeed(bskyFeed: any[]): FeedItem[] {
-  return bskyFeed.map((post) => {
-    const record = post.post.record;
+/**
+ * Normalize Bluesky feed to common FeedItem format
+ * Extract images from embed.images array
+ */
+export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
+  return rawFeed.map((item) => {
+    const post = item.post || item;
+
+    // Extract images from embed
+    const images: string[] = [];
+    if (post.embed && post.embed.images && Array.isArray(post.embed.images)) {
+      post.embed.images.forEach((img: any) => {
+        if (img.image?.thumb) {
+          images.push(img.image.thumb);
+        } else if (img.image?.fullsize) {
+          images.push(img.image.fullsize);
+        }
+      });
+    }
+
+    // Extract links
+    const links: string[] = [];
+    if (post.facets && Array.isArray(post.facets)) {
+      post.facets.forEach((facet: any) => {
+        if (facet.features) {
+          facet.features.forEach((feature: any) => {
+            if (feature.$type === "app.bsky.richtext.facet#link" && feature.uri) {
+              links.push(feature.uri);
+            }
+          });
+        }
+      });
+    }
+
     return {
+      id: post.uri || post.id,
       platform: "bluesky",
-      id: post.post.uri,
-      text: record.text,
-      author: post.post.author.displayName || post.post.author.handle,
-      authorHandle: post.post.author.handle,
-      timestamp: record.createdAt,
-      images: (record.embed?.images || []).map((img: any) => img.image.thumb),
-      links: extractLinks(record.text),
-      likeCount: post.post.likeCount || 0,
-      repostCount: post.post.repostCount || 0,
-      liked: post.post.viewer?.like ? true : false,
-      reposted: post.post.viewer?.repost ? true : false,
-      quotedPost: post.reply?.parent || null,
+      author: post.author?.displayName || post.author?.handle || "Unknown",
+      authorHandle: post.author?.handle || "unknown",
+      text: post.record?.text || post.text || "",
+      timestamp: post.record?.createdAt || post.createdAt || new Date().toISOString(),
+      likeCount: post.likeCount || 0,
+      repostCount: post.repostCount || 0,
+      replyCount: post.replyCount || 0,
+      images,
+      links,
+      liked: false,
+      reposted: false,
+      highlighted: false,
     };
   });
 }
 
-export function normalizeMastodonFeed(mastodonFeed: any[]): FeedItem[] {
-  return mastodonFeed.map((post) => {
+/**
+ * Normalize Mastodon feed to common FeedItem format
+ * Extract images from media_attachments array
+ */
+export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
+  return rawFeed.map((post) => {
+    // Extract images from media_attachments
+    const images: string[] = [];
+    if (post.media_attachments && Array.isArray(post.media_attachments)) {
+      post.media_attachments.forEach((media: any) => {
+        if (media.type === "image" && media.url) {
+          images.push(media.url);
+        } else if (media.preview_url) {
+          images.push(media.preview_url);
+        }
+      });
+    }
+
+    // Extract links from content (HTML)
+    const links: string[] = [];
+    if (post.content) {
+      const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
+      const matches = post.content.match(urlRegex);
+      if (matches) {
+        links.push(...matches);
+      }
+    }
+
+    // Strip HTML from content
+    const cleanText = post.content
+      ? post.content.replace(/<[^>]*>/g, "").replace(/&quot;/g, '"').replace(/&amp;/g, "&")
+      : "";
+
     return {
+      id: post.id || post.url,
       platform: "mastodon",
-      id: post.id,
-      text: stripHtml(post.content),
-      author: post.account.display_name || post.account.username,
-      authorHandle: post.account.acct,
-      timestamp: post.created_at,
-      images: post.media_attachments
-        .filter((m: any) => m.type === "image")
-        .map((m: any) => m.preview_url || m.url),
-      links: extractLinks(stripHtml(post.content)),
+      author: post.account?.display_name || post.account?.username || "Unknown",
+      authorHandle: post.account?.username || "unknown",
+      text: cleanText,
+      timestamp: post.created_at || new Date().toISOString(),
       likeCount: post.favourites_count || 0,
       repostCount: post.reblogs_count || 0,
+      replyCount: post.replies_count || 0,
+      images,
+      links,
       liked: post.favourited || false,
       reposted: post.reblogged || false,
-      quotedPost: post.in_reply_to_id ? { id: post.in_reply_to_id } : null,
+      highlighted: false,
     };
   });
 }
 
+/**
+ * Merge feeds with optional deduplication
+ */
 export function mergeFeedsWithDedup(
-  bskyItems: FeedItem[],
-  mastodonItems: FeedItem[],
-  deduplicate: boolean
+  bskyFeed: FeedItem[],
+  mastodonFeed: FeedItem[],
+  deduplicate: boolean = true
 ): FeedItem[] {
-  let allItems = [...bskyItems, ...mastodonItems];
+  const merged = [...bskyFeed, ...mastodonFeed];
 
-  if (deduplicate) {
-    const seen = new Map<string, FeedItem>();
-    const now = Date.now();
-    const window24h = 24 * 60 * 60 * 1000;
-
-    allItems.forEach((item) => {
-      const key = `${item.authorHandle}-${normalizeText(item.text)}`;
-      const existing = seen.get(key);
-
-      if (!existing) {
-        seen.set(key, item);
-      } else {
-        // Keep if newer, or first occurrence if within 24h
-        const existingTime = new Date(existing.timestamp).getTime();
-        const currentTime = new Date(item.timestamp).getTime();
-        const timeDiff = Math.abs(currentTime - existingTime);
-
-        if (timeDiff < window24h && currentTime < existingTime) {
-          seen.set(key, item); // Replace with older one
-        }
-      }
-    });
-
-    allItems = Array.from(seen.values());
+  if (!deduplicate) {
+    return merged;
   }
 
-  return allItems.sort(
-    (a, b) =>
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  // Deduplicate by text similarity + author
+  // If two posts have very similar text and are within 24 hours, treat as duplicate
+  const seen = new Map<string, FeedItem>();
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  merged.forEach((item) => {
+    // Create a simple hash from text and author
+    const textHash = item.text.substring(0, 50).toLowerCase().replace(/\s+/g, " ");
+    const key = `${textHash}_${item.author}`;
+
+    // Keep the first occurrence, discard later duplicates
+    if (!seen.has(key)) {
+      const itemTime = new Date(item.timestamp).toISOString();
+      if (itemTime > twentyFourHoursAgo) {
+        seen.set(key, item);
+      }
+    }
+  });
+
+  return Array.from(seen.values());
+}
+
+/**
+ * Get only posts with images
+ */
+export function filterPostsWithImages(items: FeedItem[]): FeedItem[] {
+  return items.filter((item) => item.images && item.images.length > 0);
+}
+
+/**
+ * Sort by timestamp (newest first)
+ */
+export function sortByTimestamp(items: FeedItem[]): FeedItem[] {
+  return items.sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
-}
-
-function extractLinks(text: string): string[] {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  return text.match(urlRegex) || [];
-}
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ");
-}
-
-function normalizeText(text: string): string {
-  return text.toLowerCase().trim().replace(/\s+/g, " ");
 }
