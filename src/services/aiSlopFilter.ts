@@ -21,7 +21,7 @@ const AI_KEYWORDS = [
   "deep fake",
 ];
 
-export interface AISlop Detection {
+export interface AISlopDetection {
   score: number;
   evidence: string[];
   confidence: "low" | "medium" | "high";
@@ -43,7 +43,7 @@ export interface WhitelistRule {
 
 export function detectAISlopFromComments(
   comments: string[]
-): AISlop Detection {
+): AISlopDetection {
   const firstTen = comments.slice(0, 10);
   let matches = 0;
   const evidence: string[] = [];
