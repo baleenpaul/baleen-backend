@@ -5,8 +5,12 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import feedRouter from "./routes/feed";
 import authRouter from "./routes/auth";
+import { initBlueskySession } from "./services/blueskyClient";
 
 const app = express();
+
+// Initialize Bluesky auth on startup
+initBlueskySession();
 
 app.use(cors());
 app.use(express.json());
