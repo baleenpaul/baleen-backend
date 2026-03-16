@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import feedRouter from "./routes/feed";
 import authRouter from "./routes/auth";
+import interactionsRouter from "./routes/interactions";
 import { initBlueskySession } from "./services/blueskyClient";
 
 const app = express();
@@ -22,6 +23,7 @@ app.get("/", function(req, res) {
 
 app.use("/feed", feedRouter);
 app.use("/auth", authRouter);
+app.use("/interactions", interactionsRouter);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, function() {

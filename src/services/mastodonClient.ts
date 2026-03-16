@@ -1,79 +1,134 @@
-import axios from "axios";
+// ADD THIS TO YOUR EXISTING mastodonClient.ts FILE
+// Place after the existing functions
 
-const config = {
-  url: process.env.MASTODON_URL || "https://mastodon.social",
-  token: process.env.MASTODON_ACCESS_TOKEN || "",
-};
+/**
+ * Get comments/replies for a Mastodon post
+ * Uses /statuses/{id}/context endpoint
+ */
+export async function getMastodonPostContext(statusId: string) {
+  const accessToken = process.env.MASTODON_ACCESS_TOKEN;
+  const instanceUrl = process.env.MASTODON_INSTANCE_URL || "https://mastodon.social";
 
-export async function getMastodonFeed() {
-  if (!config.token) {
-    console.warn("Mastodon token missing");
-    return [];
+  if (!accessToken) {
+    console.warn("Mastodon not authenticated");
+    return { post: null, replies: [] };
   }
 
   try {
-    const response = await axios.get(`${config.url}/api/v1/timelines/home`, {
-      params: { limit: 30 },
-      headers: { Authorization: `Bearer ${config.token}` },
-    });
+    const response = await axios.get(
+      `${instanceUrl}/api/v1/statuses/${statusId}/context`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
 
-    return response.data || [];
+    const replies: any[] = [];
+
+    // Extract descendant replies
+    if (response.data.descendants && Array.isArray(response.data.descendants)) {
+      response.data.descendants.slice(0, 10).forEach((reply: any) => {
+        replies.push({
+          id: reply.id,
+          author: reply.account?.display_name || reply.account?.username,
+          authorHandle: reply.account?.username,
+          text: reply.content.replace(/<[^>]*>/g, ""), // Strip HTML
+          timestamp: reply.created_at,
+          likeCount: reply.favourites_count || 0,
+        });
+      });
+    }
+
+    return {
+      post: response.data.status || null,
+      replies,
+    };
   } catch (error) {
-    console.error("❌ Mastodon feed fetch failed:", error);
-    return [];
+    console.error("❌ Failed to fetch post context:", error);
+    return { post: null, replies: [] };
   }
 }
 
-export async function likeMastodonPost(postId: string, action: 'like' | 'unlike') {
-  if (!config.token) {
+/**
+ * Reply to a Mastodon post
+ */
+export async function replyToMastodonPost(statusId: string, replyText: string) {
+  const accessToken = process.env.MASTODON_ACCESS_TOKEN;
+  const instanceUrl = process.env.MASTODON_INSTANCE_URL || "https://mastodon.social";
+
+  if (!accessToken) {
     throw new Error("Mastodon not authenticated");
   }
 
   try {
-    if (action === 'like') {
-      await axios.post(
-        `${config.url}/api/v1/statuses/${postId}/favourite`,
-        {},
-        { headers: { Authorization: `Bearer ${config.token}` } }
-      );
-      return { success: true };
-    } else {
-      await axios.post(
-        `${config.url}/api/v1/statuses/${postId}/unfavourite`,
-        {},
-        { headers: { Authorization: `Bearer ${config.token}` } }
-      );
-      return { success: true };
-    }
+    const response = await axios.post(
+      `${instanceUrl}/api/v1/statuses`,
+      {
+        status: replyText,
+        in_reply_to_id: statusId,
+        visibility: "public",
+      },
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    return { success: true, replyId: response.data.id };
   } catch (error) {
-    console.error("❌ Mastodon like action failed:", error);
+    console.error("❌ Failed to reply:", error);
     throw error;
   }
 }
 
-export async function repostMastodonPost(postId: string, action: 'repost' | 'unrepost') {
-  if (!config.token) {
+/**
+ * Follow a Mastodon user
+ */
+export async function followMastodonUser(userId: string) {
+  const accessToken = process.env.MASTODON_ACCESS_TOKEN;
+  const instanceUrl = process.env.MASTODON_INSTANCE_URL || "https://mastodon.social";
+
+  if (!accessToken) {
     throw new Error("Mastodon not authenticated");
   }
 
   try {
-    if (action === 'repost') {
-      await axios.post(
-        `${config.url}/api/v1/statuses/${postId}/reblog`,
-        {},
-        { headers: { Authorization: `Bearer ${config.token}` } }
-      );
-      return { success: true };
-    } else {
-      await axios.post(
-        `${config.url}/api/v1/statuses/${postId}/unreblog`,
-        {},
-        { headers: { Authorization: `Bearer ${config.token}` } }
-      );
-      return { success: true };
-    }
+    const response = await axios.post(
+      `${instanceUrl}/api/v1/accounts/${userId}/follow`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    return { success: true, following: response.data.following };
   } catch (error) {
-    console.error("❌ Mastodon repost action failed:", error);
+    console.error("❌ Failed to follow user:", error);
+    throw error;
+  }
+}
+
+/**
+ * Unfollow a Mastodon user
+ */
+export async function unfollowMastodonUser(userId: string) {
+  const accessToken = process.env.MASTODON_ACCESS_TOKEN;
+  const instanceUrl = process.env.MASTODON_INSTANCE_URL || "https://mastodon.social";
+
+  if (!accessToken) {
+    throw new Error("Mastodon not authenticated");
+  }
+
+  try {
+    const response = await axios.post(
+      `${instanceUrl}/api/v1/accounts/${userId}/unfollow`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    return { success: true, following: response.data.following };
+  } catch (error) {
+    console.error("❌ Failed to unfollow user:", error);
     throw error;
   }
 }

@@ -1,4 +1,10 @@
 import { FeedItem } from "../utils/types";
+import {
+  getBlueskyPostThread,
+} from "./blueskyClient";
+import {
+  getMastodonPostContext,
+} from "./mastodonClient";
 
 const AI_KEYWORDS = [
   "ai generated",
@@ -114,9 +120,27 @@ export interface FeedItemWithAIScore extends FeedItem {
   aiFiltered?: boolean;
 }
 
+/**
+ * Fetch real comments from platform APIs
+ */
 export async function fetchComments(
   postId: string,
   platform: string
 ): Promise<string[]> {
-  return [];
+  try {
+    if (platform === "bluesky") {
+      const result = await getBlueskyPostThread(postId);
+      return result.replies.map((r: any) => r.text);
+    }
+
+    if (platform === "mastodon") {
+      const result = await getMastodonPostContext(postId);
+      return result.replies.map((r: any) => r.text);
+    }
+
+    return [];
+  } catch (error) {
+    console.error(`Failed to fetch ${platform} comments:`, error);
+    return [];
+  }
 }
