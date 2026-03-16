@@ -10,7 +10,7 @@ import {
   WhitelistRule,
 } from "../services/aiSlopFilter";
 import { getBlueskyFeed, likeBlueskyPost, repostBlueskyPost } from "../services/blueskyClient";
-import { getMastodonFeed, likeMastodonPost, repostMastodonPost } from "../services/mastodonClient";
+import { getMastodonFeed, likeMastodonPost, boostMastodonPost } from "../services/mastodonClient";
 
 const router = Router();
 
@@ -167,7 +167,7 @@ router.post("/repost", async (req, res) => {
       const result = await repostBlueskyPost(postId, "", action);
       res.json({ success: true, result });
     } else if (platform === "mastodon") {
-      const result = await repostMastodonPost(postId, action);
+      const result = await boostMastodonPost(postId, action);
       res.json({ success: true, result });
     } else {
       res.status(400).json({
