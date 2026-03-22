@@ -39,21 +39,25 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
 export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
   return rawFeed.map((post: any) => {
     const images: string[] = [];
-
-    // Extract images from media_attachments
+    
+    // Check main post media_attachments
     if (post.media_attachments && Array.isArray(post.media_attachments)) {
       post.media_attachments.forEach((media: any) => {
-        // Try multiple URL fields in order of preference
         const imageUrl = media.preview_url || media.url || media.thumbnail_url;
         if (imageUrl) {
           images.push(imageUrl);
-          console.log(`Mastodon image added: ${imageUrl}`);
         }
       });
     }
     
-    if (images.length === 0 && post.media_attachments?.length > 0) {
-      console.log(`Mastodon post has media but no images extracted:`, post.media_attachments);
+    // Check reblog (reblog/repost) media_attachments
+    if (post.reblog?.media_attachments && Array.isArray(post.reblog.media_attachments)) {
+      post.reblog.media_attachments.forEach((media: any) => {
+        const imageUrl = media.preview_url || media.url || media.thumbnail_url;
+        if (imageUrl) {
+          images.push(imageUrl);
+        }
+      });
     }
 
     // Clean HTML from text
