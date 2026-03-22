@@ -1,215 +1,186 @@
-# 🐋 Project Context & Progress Log - Baleen
+# Baleen Project Context
 
-**Last Updated:** March 15, 2026, 4:40 PM UTC
+**Last Updated:** March 22, 2026 (Session 2)
 
----
-
-## 🐋 Project Overview
-
-Baleen is a unified, beautifully-designed social media aggregator and cross-poster with intelligent filtering.
-
-* **Goal:** One interface to read, filter, and post across multiple social platforms
-* **Name inspiration:** Baleen whales filter-feed — the app filters your social feeds
-* **Backend repo:** https://github.com/baleenpaul/baleen-backend
-* **Frontend repo:** https://github.com/baleenpaul/baleen-frontend
-* **Policy repo:** https://github.com/baleenpaul/baleen-policy
-* **Live site:** https://baleen-frontend.netlify.app
+## Quick Links
+- **Frontend:** https://baleen-frontend.netlify.app (Netlify)
+- **Backend:** https://baleen-backend.onrender.com (Render)
+- **Frontend Repo:** https://github.com/baleenpaul/baleen-frontend
+- **Backend Repo:** https://github.com/baleenpaul/baleen-backend
 
 ---
 
-## 🛠 Tech Stack
+## Current Architecture
 
-### Backend (`baleen-backend`)
-* **Runtime:** Node.js v22
-* **Language:** TypeScript
-* **Framework:** Express
-* **Deployed:** Render — https://baleen-backend.onrender.com
-* **Status:** ✅ Live and fully functional
+### Frontend Stack
+- Next.js 14.2.35 + React 18 + Tailwind CSS
+- Single `page.tsx` with three page states: `landing | feed | control`
+- Whale image: `/public/images/whale.jpg` (bioluminescent AI-generated)
 
-### Frontend (`baleen-frontend`)
-* **Framework:** Next.js 14.2.35 with React 18 and Tailwind CSS
-* **Deployed to:** Netlify — https://baleen-frontend.netlify.app
-* **Status:** ✅ Live and fully functional
+### Backend Stack
+- Node.js v22 + TypeScript + Express
+- Services: `blueskyClient.ts`, `mastodonClient.ts`, `feedNormalizer.ts`, `filterEngine.ts`
+- Routes: GET `/feed`, POST `/feed/like`, POST `/feed/repost`, GET `/feed/filters`
 
----
-
-## 📱 Platform Integration Status
-
-### ✅ Bluesky
-* **Client:** `src/services/blueskyClient.ts`
-* **Status:** Fully integrated and working
-* **Authentication:** Service account (environment-based credentials)
-* **Feed:** Fetching + normalizing ✅
-* **Actions:** Like, repost ✅
-
-### ✅ Mastodon
-* **Client:** `src/services/mastodonClient.ts`
-* **Status:** Fully integrated and working
-* **Authentication:** Static access token
-* **Feed:** Fetching + normalizing ✅
-* **Actions:** Like, repost ✅
-
-### 🔄 Threads (In Progress - OAuth Flow)
-* **Client:** `src/services/threadsClient.ts`
-* **Status:** OAuth routing **fixed**, awaiting Meta approval
-* **Authentication:** OAuth 2.0 flow
-* **Routes:** `/auth/threads/login`, `/auth/threads/callback` ✅
+### Integrated Platforms
+- ✅ **Bluesky** - fully integrated, images working
+- ✅ **Mastodon** - integrated, **images NOT working yet** (debugging in progress)
+- 🔄 **Threads** - OAuth routing still returning 404 (not yet debugged in this session)
+- 📋 **Twitter/X, Reddit, Substack** - UI placeholder only, not integrated
 
 ---
 
-## 🔧 Recent Fixes: Threads OAuth Routing Issue
+## Frontend: page.tsx Structure
 
-### Root Cause Identified
-The Threads OAuth was failing due to **multiple configuration issues**:
+### Landing Page (5 seconds)
+- Whale image (whale.jpg) 
+- IIB logo (teal gradient box)
+- "Baleen" text (cyan-blue gradient)
+- Tagline: "Unified Feed, without the noise"
+- Fades out after 5s, melts into feed
 
-1. **Wrong App ID in `.env`**
-   - Was using: Profile URL (`https://www.threads.com/@builtbadpaul`)
-   - Should be: Threads App ID (`1581961063067972`)
-   - **Status:** ✅ Fixed
+### Live Feed
+- Header: IIB + Baleen branding + Refresh button
+- Posts from Bluesky + Mastodon (mixed chronologically by timestamp)
+- Post structure:
+  - Avatar: 36px initials circle (reduced from 48px this session)
+  - Author + handle + timestamp + platform badge (🦋 Bluesky / 🐘 Mastodon)
+  - Post text
+  - Images grid (grid 2-column if multiple)
+  - Stats: 💬 replies, 🔄 reposts, ❤️ likes
+- Click logo → Control Panel
 
-2. **Missing Token Persistence**
-   - Token was acquired but not stored for API requests
-   - **Status:** ✅ Fixed in `src/routes/auth.ts`
+### Control Panel
+- **Splash mode:** FILTER letters (F I L T E R) as glowing strands, feeds bubbles (f e e d s)
+- **Filter mode:** 6 draggable bars (AI, Ad, W1, B1, B2, CU)
+- **Feeds mode:** SM icons (🦋🐘🤖📰𝕏🧵) on left (100px now, was 80px), whale image + DROP FEED zone on right
+- Click logo → Back to feed
 
-3. **Meta App Credentials Mismatch**
-   - Initially used general Meta App ID instead of Threads-specific ID
-   - **Status:** ✅ Corrected to use Threads App ID
-
-4. **Missing OAuth Redirect URI Configuration**
-   - Meta required full callback URL registered
-   - **Status:** ✅ Added to Meta app settings
-
-5. **Permissions Not Activated**
-   - `threads_basic_access` and `threads_content_publish` were "Ready for testing"
-   - Required Tech Provider verification to submit for review
-   - **Status:** 🔄 **Tech Provider verification submitted** (awaiting Meta approval)
-
-### Files Updated
-* **`.env` & `.env.save`** — Updated with correct Threads App ID and secret
-* **`src/routes/auth.ts`** — Fixed OAuth callback with:
-  - Proper token persistence (secure HTTP-only cookie)
-  - Error handling for Threads error responses
-  - Better logging for debugging
-  - Added logout endpoint
-* **Render Environment** — Variables updated with correct credentials
-
-### Current Status
-- ✅ OAuth redirect working (user sees Threads login page)
-- ✅ User authentication succeeds
-- ✅ Test user role assigned and accepted
-- 🔄 **Awaiting Meta Tech Provider approval** (1-7 business days)
-- ⏳ Once approved: Will submit permissions for App Review
-- ⏳ Once approved: Full OAuth flow will be operational
+### Styling Notes
+- Teal ocean aesthetic: `#14b8a6` (logo), `#0d9488` (text accent)
+- Cyan-blue gradient text: `linear-gradient(135deg, #00d9ff 0%, #0099ff 100%)`
+- Platform badges: 20px emoji (enlarged 100% this session)
+- Post avatars: 36px (reduced from 48px)
+- SM source icons: 100px circles (enlarged from 80px)
 
 ---
 
-## 🚀 Next Steps
+## Backend: Feed Normalization
 
-### Immediate (While waiting for Meta approval)
-1. **Integrate Threads feed into `/feed` endpoint**
-   - Create `normalizeThreadsFeed()` in `feedNormalizer.ts`
-   - Add Threads feed fetching to `/feed` route
-   - Test with mock data if needed
-
-2. **Add Threads actions support**
-   - Extend `feed.ts` to handle Threads like/repost in POST endpoints
-
-3. **Frontend integration**
-   - Add "Connect Threads" button to auth UI
-   - Handle `?threads=connected` query param
-   - Display Threads posts in unified feed
-
-### When Meta Approval Arrives
-1. Activate Threads OAuth fully
-2. End-to-end testing
-3. Deploy updates
-
-### Future Platforms
-* ⬜ Twitter/X (TBD)
-* Any others?
-
----
-
-## 📋 Architecture Notes
-
-### Authentication Patterns
-- **Bluesky:** Service account (static credentials, no OAuth)
-- **Mastodon:** Static token (no OAuth)
-- **Threads:** User OAuth flow (token stored in secure cookie)
-
-### Feed Normalization
-All feeds normalize to `FeedItem[]` type in `utils/types.ts`:
+### FeedItem Type
 ```typescript
-interface FeedItem {
-  platform: "bluesky" | "mastodon" | "threads";
+{
   id: string;
-  text: string;
+  cid?: string;                    // Bluesky only
+  platform: 'bluesky' | 'mastodon';
   author: string;
   authorHandle: string;
+  authorDid?: string;              // Bluesky only
+  authorId?: string;               // Mastodon only
+  text: string;
   timestamp: string;
-  images: string[];
-  links: string[];
   likeCount: number;
   repostCount: number;
-  liked: boolean;
-  reposted: boolean;
-  quotedPost: any | null;
+  replyCount: number;
+  liked: boolean;                  // NEW (added this session)
+  reposted: boolean;               // NEW (added this session)
+  images: string[];
+  links: any[];
 }
 ```
 
-### Filtering Engine
-- `filterEngine.ts` applies muting and highlighting
-- Mute keywords: "trump", "bitcoin", "football"
-- Highlight keywords: "ireland", "climate", "housing"
-- Can be made configurable later
+### Feed Flow
+1. **getBlueskyFeed()** → raw posts
+2. **getMastodonFeed()** → raw posts
+3. **normalizeBskyFeed()** → FeedItem[] (images from embed.images)
+4. **normalizeMastodonFeed()** → FeedItem[] (images from media_attachments, trying preview_url | url | thumbnail_url)
+5. **mergeFeedsWithDedup()** → sort by timestamp, optional dedup by text
+6. Return in GET `/feed`
+
+### Current Issue: Mastodon Images
+- Backend is fetching Mastodon posts
+- Image extraction logic added with fallbacks (preview_url → url → thumbnail_url)
+- Debug logging added to see what's happening
+- Need to check Render logs for: `📡 Fetching Mastodon feed...`, `✅ Mastodon fetched X posts`, `📸 First post has X media attachments`
 
 ---
 
-## 🔐 Security Notes
+## Deploy Commands
 
-### Secret Management
-- **GitGuardian alert:** App secret exposed in commit (March 15, 2026 12:39 UTC)
-- ✅ **Fixed:** Secret reset in Meta, updated in Render and local `.env`
-- All credentials now properly managed
+### Frontend
+```bash
+cd ~/Desktop/baleen-frontend
+cp ~/Downloads/page.tsx src/app/page.tsx
+git add src/app/page.tsx
+git commit -m "message"
+git push
+```
+Refresh: `Cmd + Shift + R`
 
-### OAuth Security
-- CSRF protection via state parameter ✅
-- Secure HTTP-only cookies ✅
-- Token expiration handling needed (TODO)
-
----
-
-## 📝 Known Issues & TODOs
-
-### Threads OAuth
-- [ ] Wait for Meta Tech Provider approval (1-7 days)
-- [ ] Submit permissions for App Review once approved
-- [ ] Full end-to-end testing once approved
-
-### General
-- [ ] Token refresh logic for Threads (access tokens expire)
-- [ ] Database integration for persistent token storage
-- [ ] Rate limiting on API endpoints
-- [ ] Better error messages for users
+### Backend
+```bash
+cd ~/Desktop/baleen-backend
+cp ~/Downloads/[file].ts src/[path]/[file].ts
+git add src/[path]/[file].ts
+git commit -m "message"
+git push
+```
+Wait 2-3 min for Render rebuild.
 
 ---
 
-## 🎯 Success Metrics
+## Session History
 
-- ✅ Bluesky feed working
-- ✅ Mastodon feed working
-- 🔄 Threads OAuth routing fixed (awaiting approval)
-- ⏳ Threads feed integration (pending OAuth approval)
-- ⬜ Twitter/X integration (TBD)
+### Session 1 (Previous)
+- Built complete landing + feed + control panel architecture
+- Integrated Bluesky + Mastodon feeds
+- Styled with ocean/bioluminescent theme
+- Deployed to Netlify + Render
+- Added whale image to feeds page
+
+### Session 2 (This Session - In Progress)
+- ✅ Added landing page with whale + tagline
+- ✅ Increased landing time to 5 seconds with fade-out
+- ✅ Consistent IIB + Baleen branding across all pages
+- ✅ Feed sorting chronologically to mix platforms
+- ✅ Reduced post avatars (48px → 36px)
+- ✅ Enlarged SM source icons (80px → 100px, emoji 32px → 40px)
+- ✅ Enlarged platform badges (10px → 20px)
+- 🔄 **Debugging Mastodon image extraction** - logs added, awaiting feedback
 
 ---
 
-## 📞 Contact & Notes
+## Known Issues & Next Steps
 
-**Developer:** Paul McNally (@builtbadpaul on Threads)  
-**Last Session:** Resolved Threads OAuth routing — submitted Tech Provider verification  
-**Next Session:** Check Meta approval status, integrate Threads feed, or work on other features
+### Priority 1: Mastodon Images
+- Images not displaying despite media_attachments in API response
+- Debug logs deployed to see URL extraction
+- Action: Check Render logs for media attachment info
+
+### Priority 2: Threads OAuth
+- `/auth/threads/login` returns 404
+- Files exist on GitHub (threadsClient.ts, auth.ts created earlier)
+- Need to verify they're actually deployed on Render
+
+### Nice-to-Have: Completed Features
+- ✅ Whale image in control panel feeds mode
+- ✅ Landing page splash
+- ✅ Chronological feed mixing
+- ✅ Responsive sizing
 
 ---
 
-**🐋 Keep building!**
+## Working Rules (from Paul's preferences)
+1. **One step at a time** - no multi-feature changes
+2. **Always repaste full files** - never just code snippets
+3. **Always specify which file** being updated
+4. **Download files automatically** after changes (no "download when you need it")
+5. **Never modify splash page** without asking
+6. **Show updated file** visually after edits
+
+---
+
+## File Locations
+- Frontend: `/Users/paul/Desktop/baleen-frontend`
+- Backend: `/Users/paul/Desktop/baleen-backend`
+- Downloads: `~/Downloads/page.tsx`, `~/Downloads/feedNormalizer.ts`, etc.
