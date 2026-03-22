@@ -19,11 +19,16 @@ export async function getMastodonFeed() {
     
     // Find posts with media
     const postsWithMedia = response.data.filter((post: any) => post.media_attachments?.length > 0);
-    console.log(`📸 Posts with media: ${postsWithMedia.length}/${response.data?.length || 0}`);
+    const reblogs = response.data.filter((post: any) => post.reblog);
     
-    if (postsWithMedia[0]) {
-      console.log(`📸 First media post has ${postsWithMedia[0].media_attachments.length} attachments`);
-      console.log(`📸 Media URLs:`, postsWithMedia[0].media_attachments.map((m: any) => m.url || m.preview_url).join(', '));
+    console.log(`📸 Posts with media: ${postsWithMedia.length}/${response.data?.length || 0}`);
+    console.log(`🔄 Reblogs: ${reblogs.length}`);
+    
+    if (reblogs[0]?.reblog) {
+      console.log(`🔄 First reblog has media_attachments:`, reblogs[0].reblog.media_attachments?.length || 0);
+      if (reblogs[0].reblog.media_attachments?.length > 0) {
+        console.log(`🔄 First reblog media URLs:`, reblogs[0].reblog.media_attachments.map((m: any) => m.url || m.preview_url).join(', '));
+      }
     }
     
     return response.data || [];
