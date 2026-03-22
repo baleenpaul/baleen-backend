@@ -43,12 +43,17 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
     // Extract images from media_attachments
     if (post.media_attachments && Array.isArray(post.media_attachments)) {
       post.media_attachments.forEach((media: any) => {
-        if (media.preview_url) {
-          images.push(media.preview_url);
-        } else if (media.url) {
-          images.push(media.url);
+        // Try multiple URL fields in order of preference
+        const imageUrl = media.preview_url || media.url || media.thumbnail_url;
+        if (imageUrl) {
+          images.push(imageUrl);
+          console.log(`Mastodon image added: ${imageUrl}`);
         }
       });
+    }
+    
+    if (images.length === 0 && post.media_attachments?.length > 0) {
+      console.log(`Mastodon post has media but no images extracted:`, post.media_attachments);
     }
 
     // Clean HTML from text
