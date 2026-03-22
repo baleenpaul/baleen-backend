@@ -28,6 +28,8 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
       likeCount: post.likeCount || 0,
       repostCount: post.repostCount || 0,
       replyCount: post.replyCount || 0,
+      liked: false,
+      reposted: false,
       images,
       links: [],
     };
@@ -65,9 +67,25 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
       likeCount: post.favourites_count || 0,
       repostCount: post.reblogs_count || 0,
       replyCount: post.replies_count || 0,
+      liked: false,
+      reposted: false,
       images,
       links: [],
     };
+  });
+}
+
+export function mergeFeedsWithDedup(bskyFeed: FeedItem[], mastodonFeed: FeedItem[], deduplicate: boolean = true): FeedItem[] {
+  const merged = [...bskyFeed, ...mastodonFeed];
+  
+  if (!deduplicate) return merged;
+
+  const seen = new Set<string>();
+  return merged.filter((item) => {
+    const key = item.text.toLowerCase().trim();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
