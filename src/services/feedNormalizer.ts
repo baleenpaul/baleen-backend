@@ -50,7 +50,7 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
       });
     }
     
-    // Check reblog (reblog/repost) media_attachments
+    // Check reblog media_attachments
     if (post.reblog?.media_attachments && Array.isArray(post.reblog.media_attachments)) {
       post.reblog.media_attachments.forEach((media: any) => {
         const imageUrl = media.preview_url || media.url || media.thumbnail_url;
@@ -58,6 +58,11 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
           images.push(imageUrl);
         }
       });
+    }
+    
+    // Check card (link preview) image
+    if (post.card?.image) {
+      images.push(post.card.image);
     }
 
     // Clean HTML from text
