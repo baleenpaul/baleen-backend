@@ -17,18 +17,17 @@ export async function getMastodonFeed() {
     });
     console.log(`✅ Mastodon fetched ${response.data?.length || 0} posts`);
     
-    // Find posts with media
+    // Check all fields that might have images
     const postsWithMedia = response.data.filter((post: any) => post.media_attachments?.length > 0);
+    const postsWithCard = response.data.filter((post: any) => post.card?.image);
     const reblogs = response.data.filter((post: any) => post.reblog);
     
     console.log(`📸 Posts with media: ${postsWithMedia.length}/${response.data?.length || 0}`);
+    console.log(`🎴 Posts with card: ${postsWithCard.length}/${response.data?.length || 0}`);
     console.log(`🔄 Reblogs: ${reblogs.length}`);
     
-    if (reblogs[0]?.reblog) {
-      console.log(`🔄 First reblog has media_attachments:`, reblogs[0].reblog.media_attachments?.length || 0);
-      if (reblogs[0].reblog.media_attachments?.length > 0) {
-        console.log(`🔄 First reblog media URLs:`, reblogs[0].reblog.media_attachments.map((m: any) => m.url || m.preview_url).join(', '));
-      }
+    if (postsWithCard[0]?.card) {
+      console.log(`🎴 First card image:`, postsWithCard[0].card.image);
     }
     
     return response.data || [];
