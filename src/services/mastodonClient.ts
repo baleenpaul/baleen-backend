@@ -16,8 +16,12 @@ export async function getMastodonFeed() {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log(`✅ Mastodon fetched ${response.data?.length || 0} posts`);
-    if (response.data?.[0]?.media_attachments) {
-      console.log(`📸 First post has ${response.data[0].media_attachments.length} media attachments`);
+    if (response.data?.[0]) {
+      console.log(`📸 First post keys:`, Object.keys(response.data[0]).join(', '));
+      console.log(`📸 First post has ${response.data[0].media_attachments?.length || 0} media attachments`);
+      if (response.data[0].media_attachments?.[0]) {
+        console.log(`📸 First media keys:`, Object.keys(response.data[0].media_attachments[0]).join(', '));
+      }
     }
     return response.data || [];
   } catch (error) {
