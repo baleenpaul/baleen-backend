@@ -16,13 +16,16 @@ export async function getMastodonFeed() {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     console.log(`✅ Mastodon fetched ${response.data?.length || 0} posts`);
-    if (response.data?.[0]) {
-      console.log(`📸 First post keys:`, Object.keys(response.data[0]).join(', '));
-      console.log(`📸 First post has ${response.data[0].media_attachments?.length || 0} media attachments`);
-      if (response.data[0].media_attachments?.[0]) {
-        console.log(`📸 First media keys:`, Object.keys(response.data[0].media_attachments[0]).join(', '));
-      }
+    
+    // Find posts with media
+    const postsWithMedia = response.data.filter((post: any) => post.media_attachments?.length > 0);
+    console.log(`📸 Posts with media: ${postsWithMedia.length}/${response.data?.length || 0}`);
+    
+    if (postsWithMedia[0]) {
+      console.log(`📸 First media post has ${postsWithMedia[0].media_attachments.length} attachments`);
+      console.log(`📸 Media URLs:`, postsWithMedia[0].media_attachments.map((m: any) => m.url || m.preview_url).join(', '));
     }
+    
     return response.data || [];
   } catch (error) {
     console.error("❌ Mastodon feed fetch failed:", error);
