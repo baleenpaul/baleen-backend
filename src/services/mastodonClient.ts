@@ -5,15 +5,20 @@ const accessToken = process.env.MASTODON_ACCESS_TOKEN;
 
 export async function getMastodonFeed() {
   if (!accessToken) {
-    console.warn("Mastodon not authenticated");
+    console.warn("❌ Mastodon not authenticated");
     return [];
   }
 
   try {
+    console.log("📡 Fetching Mastodon feed...");
     const response = await axios.get(`${instanceUrl}/api/v1/timelines/home`, {
       params: { limit: 30 },
       headers: { Authorization: `Bearer ${accessToken}` },
     });
+    console.log(`✅ Mastodon fetched ${response.data?.length || 0} posts`);
+    if (response.data?.[0]?.media_attachments) {
+      console.log(`📸 First post has ${response.data[0].media_attachments.length} media attachments`);
+    }
     return response.data || [];
   } catch (error) {
     console.error("❌ Mastodon feed fetch failed:", error);
