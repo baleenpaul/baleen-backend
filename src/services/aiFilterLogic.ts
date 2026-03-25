@@ -21,6 +21,13 @@ export interface FilteredPost {
 /**
  * Apply AI sensitivity filter to enriched feed
  * sensitivity: 0-100
+ * 
+ * Sensitivity mapping:
+ * 0% = disabled (no filtering)
+ * 25% = warn if 4+ mentions, block if 5+
+ * 50% = warn if 3+ mentions, block if 4+
+ * 75% = warn if 2+ mentions, block if 3+
+ * 100% = warn if 1+ mentions, block if 2+
  */
 export function applyAISensitivityFilter(
   posts: any[],
@@ -36,12 +43,30 @@ export function applyAISensitivityFilter(
     }));
   }
 
-  // Sensitivity > 0 = enable filtering
-  console.log(`🎚️ AI filter: ON (sensitivity ${sensitivity})`);
+  // Calculate thresholds based on sensitivity
+  let warnThreshold: number;
+  let blockThreshold: number;
+
+  if (sensitivity <= 25) {
+    warnThreshold = 4;
+    blockThreshold = 5;
+  } else if (sensitivity <= 50) {
+    warnThreshold = 3;
+    blockThreshold = 4;
+  } else if (sensitivity <= 75) {
+    warnThreshold = 2;
+    blockThreshold = 3;
+  } else {
+    // 76-100: maximum sensitivity
+    warnThreshold = 1;
+    blockThreshold = 2;
+  }
+
+  console.log(`🎚️ AI filter: ON (sensitivity ${sensitivity}) - warn at ${warnThreshold}+, block at ${blockThreshold}+`);
 
   return posts.map((post) => {
     // Posts without AI detection = pass through
-    if (!post.isAI || !post.aiScore) {
+    if (!post.aiScore || post.aiScore === 0) {
       return {
         ...post,
         aiWarning: false,
@@ -49,38 +74,12 @@ export function applyAISensitivityFilter(
       };
     }
 
-    // Post is flagged as AI (score > 5)
-    // Now apply sensitivity logic
-
-    if (sensitivity <= 25) {
-      // Low sensitivity: only block posts with very high AI scores (9-10)
-      return {
-        ...post,
-        aiWarning: post.aiScore >= 8, // Warn if score 8+
-        aiBlocked: post.aiScore >= 9, // Block if score 9+
-      };
-    } else if (sensitivity <= 50) {
-      // Medium sensitivity: warn on medium AI scores, block on high
-      return {
-        ...post,
-        aiWarning: post.aiScore >= 6, // Warn if score 6+
-        aiBlocked: post.aiScore >= 8, // Block if score 8+
-      };
-    } else if (sensitivity <= 75) {
-      // High sensitivity: warn on any AI flag, block on medium-high
-      return {
-        ...post,
-        aiWarning: post.aiScore >= 6, // Warn if score 6+
-        aiBlocked: post.aiScore >= 7, // Block if score 7+
-      };
-    } else {
-      // Maximum sensitivity (75-100): block any AI reference
-      return {
-        ...post,
-        aiWarning: false, // Don't even warn, just block
-        aiBlocked: post.aiScore > 5, // Block any score > 5 (any AI detected)
-      };
-    }
+    // Apply thresholds
+    return {
+      ...post,
+      aiWarning: post.aiScore >= warnThreshold && post.aiScore < blockThreshold,
+      aiBlocked: post.aiScore >= blockThreshold,
+    };
   });
 }
 

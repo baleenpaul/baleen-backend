@@ -69,13 +69,13 @@ export function detectAIInReplies(replies: string[]): AIScore {
     });
   });
 
-  // Convert matches to 1-10 score
-  // 0 matches = 1, 1 match = 2, 2 matches = 3, etc (capped at 10)
-  const score = Math.min(totalMatches + 1, 10);
+  // Convert matches to score
+  // Simple: 1 mention = 1, 2 mentions = 2, etc (capped at 10)
+  const score = Math.min(totalMatches, 10);
 
   return {
     score,
-    isAI: score > 5,
+    isAI: score > 0, // Any match is flagged
     matchesFound: totalMatches,
     evidence: evidence.slice(0, 3), // Only show first 3 evidence items
   };
