@@ -128,19 +128,27 @@ export async function fetchComments(
   platform: string
 ): Promise<string[]> {
   try {
+    console.log(`📡 fetchComments: platform=${platform}, postId=${postId}`);
     if (platform === "bluesky") {
+      console.log(`📡 Calling getBlueskyPostThread...`);
       const result = await getBlueskyPostThread(postId);
-      return result.replies.map((r: any) => r.text);
+      const replies = result.replies.map((r: any) => r.text);
+      console.log(`📡 Bluesky got ${replies.length} replies`);
+      return replies;
     }
 
     if (platform === "mastodon") {
+      console.log(`📡 Calling getMastodonPostContext...`);
       const result = await getMastodonPostContext(postId);
-      return result.replies.map((r: any) => r.text);
+      const replies = result.replies.map((r: any) => r.text);
+      console.log(`📡 Mastodon got ${replies.length} replies`);
+      return replies;
     }
 
+    console.log(`📡 Unknown platform: ${platform}`);
     return [];
   } catch (error) {
-    console.error(`Failed to fetch ${platform} comments:`, error);
+    console.error(`❌ fetchComments error (${platform}/${postId}):`, error);
     return [];
   }
 }
