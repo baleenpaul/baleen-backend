@@ -59,7 +59,7 @@ export function applyAISensitivityFilter(
   } else {
     // 76-100: maximum sensitivity
     warnThreshold = 1;
-    blockThreshold = 2;
+    blockThreshold = 1; // Block at same level as warn = hide completely
   }
 
   console.log(`🎚️ AI filter: ON (sensitivity ${sensitivity}) - warn at ${warnThreshold}+, block at ${blockThreshold}+`);
@@ -77,8 +77,8 @@ export function applyAISensitivityFilter(
     // Apply thresholds
     return {
       ...post,
-      aiWarning: post.aiScore >= warnThreshold && post.aiScore < blockThreshold,
-      aiBlocked: post.aiScore >= blockThreshold,
+      aiWarning: post.aiScore >= warnThreshold, // Show warning at or above warn threshold
+      aiBlocked: post.aiScore >= blockThreshold, // Hide at or above block threshold
     };
   });
 }
