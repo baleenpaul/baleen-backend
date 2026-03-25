@@ -13,8 +13,9 @@ const AI_KEYWORDS = [
   "claude",
   "artificial intelligence",
   "llm",
-  "bot",
-  "fake",
+  "llama",
+  "gemini",
+  "deepseek",
   "this is ai",
   "clearly ai",
   "obvious ai",
@@ -24,10 +25,8 @@ const AI_KEYWORDS = [
   "machine learning",
   "neural network",
   "deepfake",
-  "not real",
-  "algorithm",
-  "robot",
-  "computer generated",
+  "ai-generated",
+  "ai-written",
 ];
 
 export interface AIScore {
