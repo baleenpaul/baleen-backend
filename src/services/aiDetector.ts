@@ -5,6 +5,7 @@
  */
 
 const AI_KEYWORDS = [
+  "ai",
   "ai generated",
   "ai slop",
   "gpt",
