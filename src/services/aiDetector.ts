@@ -43,9 +43,9 @@ export interface AIScore {
  */
 export function detectAIInReplies(replies: string[]): AIScore {
   if (!replies || replies.length === 0) {
-    // No replies = neutral (score 5)
+    // No replies = neutral (score 0)
     return {
-      score: 5,
+      score: 0,
       isAI: false,
       matchesFound: 0,
       evidence: [],
@@ -62,8 +62,24 @@ export function detectAIInReplies(replies: string[]): AIScore {
     const lowerReply = reply.toLowerCase();
     
     AI_KEYWORDS.forEach((keyword) => {
-      if (lowerReply.includes(keyword)) {
-        totalMatches++;
+      // Use word boundary regex to match whole words only
+      // For single words like "ai", use \b boundaries
+      // For phrases like "ai generated", just check if substring exists
+      let matches = 0;
+      
+      if (keyword.includes(' ')) {
+        // Multi-word phrase - use substring match
+        if (lowerReply.includes(keyword)) {
+          matches = 1;
+        }
+      } else {
+        // Single word - use word boundary regex
+        const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+        matches = (lowerReply.match(regex) || []).length;
+      }
+      
+      if (matches > 0) {
+        totalMatches += matches;
         evidence.push(`Reply ${index + 1}: "${keyword}"`);
       }
     });
