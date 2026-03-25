@@ -60,29 +60,46 @@ export async function getMastodonReplies(statusId: string): Promise<string[]> {
 
   try {
     console.log(`📖 Fetching Mastodon replies for: ${statusId}`);
-    const response = await axios.get(
-      `${mastodonInstance}/api/v1/statuses/${statusId}/context`,
-      {
-        headers: { Authorization: `Bearer ${mastodonToken}` },
-      }
-    );
+    const url = `${mastodonInstance}/api/v1/statuses/${statusId}/context`;
+    console.log(`📖 URL: ${url}`);
+    
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${mastodonToken}` },
+    });
+
+    console.log(`📖 Response status: ${response.status}`);
+    console.log(`📖 descendants array length: ${response.data?.descendants?.length || 0}`);
+
+    if (!response.data?.descendants) {
+      console.log(`📖 No descendants field in response`);
+      console.log(`📖 Response keys: ${Object.keys(response.data).join(', ')}`);
+    }
 
     const replies: string[] = [];
 
     if (response.data?.descendants && Array.isArray(response.data.descendants)) {
-      // Take first 10 descendants, strip HTML
-      response.data.descendants.slice(0, 10).forEach((reply: any) => {
+      console.log(`📖 Processing ${response.data.descendants.length} descendants`);
+      response.data.descendants.slice(0, 10).forEach((reply: any, idx: number) => {
         if (reply.content) {
           const cleanText = reply.content.replace(/<[^>]*>/g, "");
+          console.log(`📖 Reply ${idx}: "${cleanText.substring(0, 50)}..."`);
           replies.push(cleanText);
+        } else {
+          console.log(`📖 Reply ${idx}: No content field`);
         }
       });
+    } else {
+      console.log(`📖 descendants is not an array or missing`);
     }
 
     console.log(`📖 Got ${replies.length} Mastodon replies`);
     return replies;
   } catch (error) {
     console.error(`❌ Failed to fetch Mastodon replies:`, error instanceof Error ? error.message : error);
+    if (error instanceof Error && 'response' in error) {
+      console.error(`❌ Response status: ${(error as any).response?.status}`);
+      console.error(`❌ Response data: ${JSON.stringify((error as any).response?.data)}`);
+    }
     return [];
   }
 }
