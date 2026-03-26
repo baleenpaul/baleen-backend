@@ -2,9 +2,12 @@
  * AI Filter Logic
  * Applies sensitivity slider (0-100) to AI scores
  * 
+ * Strategy: WARNING ONLY - never blocks posts
+ * User always has "Lift Filter" option to dismiss warning
+ * 
  * Sensitivity 0: All posts shown normally, no filtering
- * Sensitivity 50: Suspected AI posts greyed out with warning + score
- * Sensitivity 100: All AI-suspect posts (score > 5) are hidden
+ * Sensitivity 50: Posts with 3+ AI mentions show warning
+ * Sensitivity 100: Posts with 1+ AI mention show warning
  */
 
 export interface FilteredPost {
@@ -14,20 +17,23 @@ export interface FilteredPost {
   isAI?: boolean;
   aiEvidence?: string[];
   // NEW FILTER FIELDS
-  aiWarning?: boolean; // true = show greyed with warning
-  aiBlocked?: boolean; // true = hide completely
+  aiWarning?: boolean; // true = show warning banner, user can lift
+  aiBlocked?: boolean; // always false - we never block posts
 }
 
 /**
  * Apply AI sensitivity filter to enriched feed
  * sensitivity: 0-100
  * 
+ * Strategy: WARNING ONLY - never blocks posts
+ * User always has "Lift Filter" option
+ * 
  * Sensitivity mapping:
  * 0% = disabled (no filtering)
- * 25% = warn if 4+ mentions, block if 5+
- * 50% = warn if 3+ mentions, block if 4+
- * 75% = warn if 2+ mentions, block if 3+
- * 100% = warn if 1+ mentions, block if 2+
+ * 25% = warn if 4+ mentions
+ * 50% = warn if 3+ mentions
+ * 75% = warn if 2+ mentions
+ * 100% = warn if 1+ mention
  */
 export function applyAISensitivityFilter(
   posts: any[],
@@ -43,26 +49,22 @@ export function applyAISensitivityFilter(
     }));
   }
 
-  // Calculate thresholds based on sensitivity
+  // Calculate warning threshold based on sensitivity
+  // Never block - always allow user to lift filter
   let warnThreshold: number;
-  let blockThreshold: number;
 
   if (sensitivity <= 25) {
     warnThreshold = 4;
-    blockThreshold = 5;
   } else if (sensitivity <= 50) {
     warnThreshold = 3;
-    blockThreshold = 4;
   } else if (sensitivity <= 75) {
     warnThreshold = 2;
-    blockThreshold = 3;
   } else {
     // 76-100: maximum sensitivity
     warnThreshold = 1;
-    blockThreshold = 1; // Block at same level as warn = hide completely
   }
 
-  console.log(`🎚️ AI filter: ON (sensitivity ${sensitivity}) - warn at ${warnThreshold}+, block at ${blockThreshold}+`);
+  console.log(`🎚️ AI filter: ON (sensitivity ${sensitivity}) - warn at ${warnThreshold}+`);
 
   return posts.map((post) => {
     // Posts without AI detection = pass through
@@ -70,15 +72,15 @@ export function applyAISensitivityFilter(
       return {
         ...post,
         aiWarning: false,
-        aiBlocked: false,
+        aiBlocked: false, // ALWAYS false
       };
     }
 
-    // Apply thresholds
+    // Show warning if threshold met, but NEVER block
     return {
       ...post,
-      aiWarning: post.aiScore >= warnThreshold, // Show warning at or above warn threshold
-      aiBlocked: post.aiScore >= blockThreshold, // Hide at or above block threshold
+      aiWarning: post.aiScore >= warnThreshold,
+      aiBlocked: false, // ALWAYS false - never hide posts
     };
   });
 }
@@ -90,9 +92,10 @@ export function applyAISensitivityFilter(
  * → all posts normal, no filtering
  * 
  * sensitivity = 50
- * → posts with aiScore 6+ get greyed + warning
- * → posts with aiScore 8+ get hidden
+ * → posts with aiScore 3+ show warning
+ * → user can click "Lift Filter" to dismiss warning
  * 
  * sensitivity = 100
- * → any post with aiScore > 5 gets hidden
+ * → any post with aiScore 1+ shows warning
+ * → user can always lift filter to view
  */
