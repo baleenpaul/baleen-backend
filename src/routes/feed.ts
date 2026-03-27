@@ -34,6 +34,7 @@ router.get("/", async (req, res) => {
 
     // 3. Merge
     let merged = mergeFeedsWithDedup(normalizedBsky, normalizedMastodon, true);
+merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     console.log(`📡 Merged: ${merged.length} posts`);
 
     // 4. Enrich with AI detection
