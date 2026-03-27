@@ -34,6 +34,7 @@ router.get("/", async (req, res) => {
 
     // 3. Merge
     let merged = mergeFeedsWithDedup(normalizedBsky, normalizedMastodon, true);
+console.log(`📡 About to sort ${merged.length} posts...`);
     merged.sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime();
     const timeB = new Date(b.timestamp).getTime();
