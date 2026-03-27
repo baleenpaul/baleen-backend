@@ -34,14 +34,14 @@ router.get("/", async (req, res) => {
 
     // 3. Merge
     let merged = mergeFeedsWithDedup(normalizedBsky, normalizedMastodon, true);
-merged.sort((a, b) => {
-const timeA = new Date(a.timestamp).getTime();
-const timeB = new Date(b.timestamp).getTime();
-if (isNaN(timeA) || isNaN(timeB)) {
-console.log(`⚠️  Bad timestamp: A=${a.timestamp} (${timeA}), B=${b.timestamp} (${timeB})`);
-}
-return timeB - timeA;
-});
+    merged.sort((a, b) => {
+    const timeA = new Date(a.timestamp).getTime();
+    const timeB = new Date(b.timestamp).getTime();
+    if (isNaN(timeA) || isNaN(timeB)) {
+    console.log(`⚠️  Bad timestamp: A=${a.timestamp} (${timeA}), B=${b.timestamp} (${timeB})`);
+    }
+    return timeB - timeA;
+    });
 
     // 4. Enrich with AI detection
     console.log(`🤖 Starting AI enrichment...`);
