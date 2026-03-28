@@ -30,6 +30,36 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
       });
     }
 
+    // Extract embedded/quoted post
+    let quotedPost: any = undefined;
+    if (post.embed && post.embed.$type === "app.bsky.embed.record") {
+      const embeddedPost = post.embed.record;
+      const embeddedImages: string[] = [];
+      
+      // Extract images from embedded post if it has media
+      if (post.embed.media && post.embed.media.images && Array.isArray(post.embed.media.images)) {
+        post.embed.media.images.forEach((img: any) => {
+          if (img.thumb) {
+            embeddedImages.push(img.thumb);
+          } else if (img.fullsize) {
+            embeddedImages.push(img.fullsize);
+          }
+        });
+      }
+
+      quotedPost = {
+        id: embeddedPost.uri || embeddedPost.id,
+        author: embeddedPost.author?.displayName || embeddedPost.author?.handle || "Unknown",
+        authorHandle: embeddedPost.author?.handle || "unknown",
+        text: embeddedPost.value?.text || "",
+        timestamp: embeddedPost.value?.createdAt || new Date().toISOString(),
+        images: embeddedImages,
+        likeCount: embeddedPost.likeCount || 0,
+        repostCount: embeddedPost.repostCount || 0,
+        replyCount: embeddedPost.replyCount || 0,
+      };
+    }
+
     return {
       id: post.uri || post.id,
       cid: post.cid,
@@ -46,6 +76,7 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
       reposted: false,
       images,
       links,
+      quotedPost,
     };
   });
 }
