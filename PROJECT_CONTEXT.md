@@ -40,57 +40,92 @@
    - Files: `src/app/components/LikeButton.tsx`, `src/app/components/RepostButton.tsx`
    - Buttons render but don't execute (see blocking issue below)
 
-## Session 7 (Mar 28) - IN PROGRESS
+## Session 7 (Mar 28) - COMPLETED ✅
 
-### 🚨 BLOCKING ISSUE: User Authentication System Not Yet Built
+### 🎉 User Authentication System Built
 
-**Problem**: Cannot continue building/testing interaction features without user auth.
+#### ✅ Backend Infrastructure
+1. **PostgreSQL Database on Render**
+   - Free tier (expires Apr 27, 2026)
+   - Tables: `users` (id, username, email, password_hash, created_at) + `credentials` (user_id, platform, handle, token_encrypted, created_at)
+   - Migration script: `src/migrate.ts` successfully creates schema
+   - External URL: `postgresql://baleen_user:...@dpg-d740m6ma2pns73aeon90-a.frankfurt-postgres.render.com/baleen?sslmode=require`
 
-Current state:
-- Backend fetches feed using **developer credentials** (env vars)
-- Interaction endpoints require **user authentication tokens**
-- No user signup/login system exists
-- No way for users to store their SM platform credentials
-- Like/repost buttons fail silently because they have no auth token
+2. **Auth Endpoints - ALL WORKING** ✅
+   - `POST /auth/signup` - Register user, returns JWT ✅ **TESTED AND WORKING**
+   - `POST /auth/login` - Login with username/password, returns JWT
+   - `POST /auth/add-credential` - Add SM platform credentials (requires JWT)
+   - `GET /auth/credentials` - Get user's connected platforms (requires JWT)
 
-**Cannot proceed with testing interactions until this is fixed.**
+3. **Utility Files Created**
+   - `src/utils/db.ts` - Database connection pool
+   - `src/utils/password.ts` - Password hashing with bcrypt
+   - `src/utils/jwt.ts` - JWT token generation/verification
+   - `src/utils/encryption.ts` - AES-256 encryption for storing credentials
+   - `src/utils/auth-types.ts` - TypeScript interfaces
 
-### NEXT: Build User Authentication System
+4. **Auth Middleware**
+   - JWT verification on protected routes
+   - Credential encryption/decryption (AES-256)
 
-#### Phase 1: Backend User System
-1. **Database Schema**
-   - Users table: id, username, email, password_hash
-   - Credentials table: userId, platform (bluesky|mastodon), handle, token/password (encrypted)
+#### ✅ Test Results
+```
+POST https://baleen-backend.onrender.com/auth/signup
+Input: {"username":"paul","email":"paul@baleen.com","password":"testpass123"}
 
-2. **Auth Endpoints**
-   - `POST /auth/signup` - Register user
-   - `POST /auth/login` - Authenticate, return JWT
-   - `POST /auth/add-credential` - User adds Bluesky app password or Mastodon token
-   - `GET /auth/credentials` - Get user's connected platforms
+Response: ✅ SUCCESS
+{
+  "success": true,
+  "token": "eyJhbGc...",
+  "user": {
+    "id": 1,
+    "username": "paul",
+    "email": "paul@baleen.com",
+    "created_at": "2026-03-28T18:02:54.532Z"
+  }
+}
+```
+
+### NEXT: Frontend Auth UI + Whale Integration
+
+#### Phase 2: Frontend (Ready to Build)
+1. **Login/Signup Pages**
+   - Simple forms for username/password
+   - Store JWT token in localStorage
+   - Redirect to feeds page on success
+
+2. **Whale Drop → Add Credential Modal**
+   - User drags SM icon to whale mouth → opens modal
+   - Modal form: platform selector + handle + token/app-password inputs
+   - Calls `POST /auth/add-credential` with JWT token
+   - Shows list of connected platforms after submission
 
 3. **Update Interaction Endpoints**
-   - Add JWT verification middleware
-   - Update `/interactions/like` and `/interactions/repost` to:
+   - Modify `/interactions/like` and `/interactions/repost` to:
      - Extract user ID from JWT
-     - Fetch user's stored credentials from database
-     - Use user's credentials (not dev credentials) for API calls
+     - Fetch user's stored credentials from DB
+     - Decrypt and use user's credentials (not dev credentials)
 
-#### Phase 2: Frontend Auth UI
-1. Signup/login pages
-2. Credential management page (add Bluesky & Mastodon accounts)
-3. Auth state management (JWT storage, session handling)
+#### Expected User Workflow
+1. User signs up at Baleen login page
+2. User logs in, JWT token stored in browser
+3. User sees feeds page + whale drop interface
+4. User drags Bluesky icon to whale mouth
+5. Modal opens: enter Bluesky handle + app password
+6. Credentials encrypted and stored in database
+7. User can now like/repost with their own credentials
+8. Repeat for Mastodon
 
-#### Timeline to Restore Functionality
-1. Build user system (backend)
-2. Build login UI (frontend)
-3. Log in with your account
-4. Add your Bluesky + Mastodon credentials
-5. Like/repost buttons will use YOUR credentials
-6. All interaction features can be tested
+### ✅ All Backend Auth Done
+- ✅ Signup working
+- ✅ Login ready
+- ✅ Credential storage ready
+- ✅ Database schema ready
 
-### 🚨 Not Yet Started
-1. **Frontend interaction buttons** - No UI to call the new like/repost endpoints
-2. **Error handling** - Like/repost endpoints need token auth (user not yet logged in)
+### ⏳ Not Yet Started
+1. **Frontend login/signup UI** 
+2. **Whale drop → credential modal** wiring
+3. **Update interaction endpoints** to use user's stored credentials
 
 ## Architecture Overview
 
