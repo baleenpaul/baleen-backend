@@ -6,7 +6,7 @@ export interface FeedItem {
   authorHandle: string;
   timestamp: string;
   images: string[];
-  links: string[];
+  links: Array<{url: string; title?: string}>;
   quotedPost?: any;
   highlighted?: boolean;
   likeCount: number;
