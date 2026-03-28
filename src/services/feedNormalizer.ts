@@ -124,6 +124,37 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
       ? post.content.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
       : "";
 
+    // Extract reblog (quoted post) from Mastodon
+    let quotedPost: any = undefined;
+    if (post.reblog) {
+      const reblogImages: string[] = [];
+      
+      if (post.reblog.media_attachments && Array.isArray(post.reblog.media_attachments)) {
+        post.reblog.media_attachments.forEach((media: any) => {
+          const imageUrl = media.preview_url || media.url || media.thumbnail_url;
+          if (imageUrl) {
+            reblogImages.push(imageUrl);
+          }
+        });
+      }
+
+      const reblogCleanText = post.reblog.content
+        ? post.reblog.content.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        : "";
+
+      quotedPost = {
+        id: post.reblog.id || post.reblog.url,
+        author: post.reblog.account?.display_name || post.reblog.account?.username || "Unknown",
+        authorHandle: post.reblog.account?.username || "unknown",
+        text: reblogCleanText,
+        timestamp: post.reblog.created_at || new Date().toISOString(),
+        images: reblogImages,
+        likeCount: post.reblog.favourites_count || 0,
+        repostCount: post.reblog.reblogs_count || 0,
+        replyCount: post.reblog.replies_count || 0,
+      };
+    }
+
     return {
       id: post.id || post.url,
       platform: "mastodon",
@@ -139,6 +170,7 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
       reposted: false,
       images,
       links,
+      quotedPost,
     };
   });
 }
