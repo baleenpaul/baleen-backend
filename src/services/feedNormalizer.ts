@@ -180,9 +180,24 @@ export function mergeFeedsWithDedup(bskyFeed: FeedItem[], mastodonFeed: FeedItem
   
   if (!deduplicate) return merged;
 
+  // Helper function to normalize text for comparison
+  function normalizeForComparison(text: string): string {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/https?:\/\/[^\s]+/g, '') // Remove URLs
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/[^\w\s]/g, '') // Remove special chars except spaces
+      .trim();
+  }
+
   const seen = new Set<string>();
   return merged.filter((item) => {
-    const key = item.text.toLowerCase().trim();
+    // Create a composite key: author + normalized text + first link URL
+    const normalizedText = normalizeForComparison(item.text);
+    const firstLinkUrl = item.links && item.links.length > 0 ? item.links[0].url : '';
+    const key = `${item.author.toLowerCase()}|${normalizedText}|${firstLinkUrl}`;
+    
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
