@@ -4,12 +4,16 @@ import {
   replyToBlueskyPost,
   followBlueskyUser,
   unfollowBlueskyUser,
+  likeBlueskyPost,
+  repostBlueskyPost,
 } from "../services/blueskyClient";
 import {
   getMastodonPostContext,
   replyToMastodonPost,
   followMastodonUser,
   unfollowMastodonUser,
+  likeMastodonPost,
+  boostMastodonPost,
 } from "../services/mastodonClient";
 
 const router = Router();
@@ -220,6 +224,126 @@ router.post("/unfollow", async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || "Unfollow failed",
+    });
+  }
+});
+
+/**
+ * POST /interactions/like
+ * Like or unlike a post
+ *
+ * Body:
+ * {
+ *   "postId": "..." (bluesky: uri),
+ *   "platform": "bluesky|mastodon",
+ *   "cid": "..." (bluesky only),
+ *   "action": "like|unlike"
+ * }
+ */
+router.post("/like", async (req, res) => {
+  try {
+    const { postId, platform, cid, action } = req.body;
+
+    if (!postId || !platform || !action) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing postId, platform, or action",
+      });
+    }
+
+    if (!['like', 'unlike'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: "Action must be 'like' or 'unlike'",
+      });
+    }
+
+    if (platform === "bluesky") {
+      if (!cid) {
+        return res.status(400).json({
+          success: false,
+          error: "Bluesky requires cid",
+        });
+      }
+      const result = await likeBlueskyPost(postId, cid, action);
+      return res.json({ success: true, platform, action, result });
+    }
+
+    if (platform === "mastodon") {
+      const result = await likeMastodonPost(postId, action);
+      return res.json({ success: true, platform, action, result });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: `Platform ${platform} not supported`,
+    });
+  } catch (error: any) {
+    console.error("Like error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Like action failed",
+    });
+  }
+});
+
+/**
+ * POST /interactions/repost
+ * Repost or unrepost a post
+ *
+ * Body:
+ * {
+ *   "postId": "..." (bluesky: uri),
+ *   "platform": "bluesky|mastodon",
+ *   "cid": "..." (bluesky only),
+ *   "action": "repost|unrepost"
+ * }
+ */
+router.post("/repost", async (req, res) => {
+  try {
+    const { postId, platform, cid, action } = req.body;
+
+    if (!postId || !platform || !action) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing postId, platform, or action",
+      });
+    }
+
+    if (!['repost', 'unrepost', 'boost', 'unboost'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        error: "Action must be 'repost'/'unrepost' (bluesky) or 'boost'/'unboost' (mastodon)",
+      });
+    }
+
+    if (platform === "bluesky") {
+      if (!cid) {
+        return res.status(400).json({
+          success: false,
+          error: "Bluesky requires cid",
+        });
+      }
+      const result = await repostBlueskyPost(postId, cid, action as 'repost' | 'unrepost');
+      return res.json({ success: true, platform, action, result });
+    }
+
+    if (platform === "mastodon") {
+      // Map repost/unrepost to boost/unboost for Mastodon
+      const mastodonAction = action === 'repost' ? 'boost' : action === 'unrepost' ? 'unboost' : action;
+      const result = await boostMastodonPost(postId, mastodonAction as 'boost' | 'unboost');
+      return res.json({ success: true, platform, action: mastodonAction, result });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: `Platform ${platform} not supported`,
+    });
+  } catch (error: any) {
+    console.error("Repost error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Repost action failed",
     });
   }
 });
