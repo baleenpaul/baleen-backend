@@ -1,186 +1,187 @@
-# Baleen Project Context
+# Baleen Project Context - March 28, 2026
 
-**Last Updated:** March 22, 2026 (Session 2)
+## Current Status
+- **Backend**: Node.js/TypeScript/Express on Render
+- **Frontend**: Next.js 14 + React + Tailwind on Netlify
+- **Connected Platforms**: Bluesky ✅, Mastodon ✅
 
-## Quick Links
-- **Frontend:** https://baleen-frontend.netlify.app (Netlify)
-- **Backend:** https://baleen-backend.onrender.com (Render)
-- **Frontend Repo:** https://github.com/baleenpaul/baleen-frontend
-- **Backend Repo:** https://github.com/baleenpaul/baleen-backend
+## Session 5 (Mar 27-28) - Completed
 
----
+### ✅ Done
+1. **Link extraction** - Backend now extracts links from:
+   - Bluesky: `post.record.facets` (richtext links)
+   - Mastodon: `post.card.url` (link previews)
+   - Updated `FeedItem` type: `links: Array<{url: string; title?: string}>`
+   - File: `src/services/feedNormalizer.ts`
 
-## Current Architecture
+2. **Interaction endpoints** - Added to `src/routes/interactions.ts`:
+   - `POST /interactions/like` - Like/unlike posts (Bluesky + Mastodon)
+   - `POST /interactions/repost` - Repost/unrepost (Bluesky) + boost/unboost (Mastodon)
+   - Both use platform-specific client functions that already existed
 
-### Frontend Stack
-- Next.js 14.2.35 + React 18 + Tailwind CSS
-- Single `page.tsx` with three page states: `landing | feed | control`
-- Whale image: `/public/images/whale.jpg` (bioluminescent AI-generated)
+3. **Frontend UI changes**:
+   - Platform bubbles (Reddit, Substack, Twitter, Threads) → "Coming soon" disabled
+   - Loading message → "Filtering feed"
+   - Logo added to repo
 
-### Backend Stack
-- Node.js v22 + TypeScript + Express
-- Services: `blueskyClient.ts`, `mastodonClient.ts`, `feedNormalizer.ts`, `filterEngine.ts`
-- Routes: GET `/feed`, POST `/feed/like`, POST `/feed/repost`, GET `/feed/filters`
+## Session 6 (Mar 28) - Completed
 
-### Integrated Platforms
-- ✅ **Bluesky** - fully integrated, images working
-- ✅ **Mastodon** - integrated, **images NOT working yet** (debugging in progress)
-- 🔄 **Threads** - OAuth routing still returning 404 (not yet debugged in this session)
-- 📋 **Twitter/X, Reddit, Substack** - UI placeholder only, not integrated
+### ✅ Done
+1. **Chronological feed sort** - Client-side sort now working. Posts from Bluesky + Mastodon are interleaved by timestamp (newest first).
 
----
+2. **Frontend link rendering** - LinkCard component displays extracted links:
+   - File: `src/app/components/LinkCard.tsx`
+   - Renders links below post images
+   - Styled with cyan theme, hover effects
 
-## Frontend: page.tsx Structure
+3. **Embedded posts extraction** - Backend extracts quoted posts from Bluesky and reblogs from Mastodon
 
-### Landing Page (5 seconds)
-- Whale image (whale.jpg) 
-- IIB logo (teal gradient box)
-- "Baleen" text (cyan-blue gradient)
-- Tagline: "Unified Feed, without the noise"
-- Fades out after 5s, melts into feed
+4. **Interactive Like and Repost buttons** - Frontend components created
+   - Files: `src/app/components/LikeButton.tsx`, `src/app/components/RepostButton.tsx`
+   - Buttons render but don't execute (see blocking issue below)
 
-### Live Feed
-- Header: IIB + Baleen branding + Refresh button
-- Posts from Bluesky + Mastodon (mixed chronologically by timestamp)
-- Post structure:
-  - Avatar: 36px initials circle (reduced from 48px this session)
-  - Author + handle + timestamp + platform badge (🦋 Bluesky / 🐘 Mastodon)
-  - Post text
-  - Images grid (grid 2-column if multiple)
-  - Stats: 💬 replies, 🔄 reposts, ❤️ likes
-- Click logo → Control Panel
+## Session 7 (Mar 28) - IN PROGRESS
 
-### Control Panel
-- **Splash mode:** FILTER letters (F I L T E R) as glowing strands, feeds bubbles (f e e d s)
-- **Filter mode:** 6 draggable bars (AI, Ad, W1, B1, B2, CU)
-- **Feeds mode:** SM icons (🦋🐘🤖📰𝕏🧵) on left (100px now, was 80px), whale image + DROP FEED zone on right
-- Click logo → Back to feed
+### 🚨 BLOCKING ISSUE: User Authentication System Not Yet Built
 
-### Styling Notes
-- Teal ocean aesthetic: `#14b8a6` (logo), `#0d9488` (text accent)
-- Cyan-blue gradient text: `linear-gradient(135deg, #00d9ff 0%, #0099ff 100%)`
-- Platform badges: 20px emoji (enlarged 100% this session)
-- Post avatars: 36px (reduced from 48px)
-- SM source icons: 100px circles (enlarged from 80px)
+**Problem**: Cannot continue building/testing interaction features without user auth.
 
----
+Current state:
+- Backend fetches feed using **developer credentials** (env vars)
+- Interaction endpoints require **user authentication tokens**
+- No user signup/login system exists
+- No way for users to store their SM platform credentials
+- Like/repost buttons fail silently because they have no auth token
 
-## Backend: Feed Normalization
+**Cannot proceed with testing interactions until this is fixed.**
 
-### FeedItem Type
+### NEXT: Build User Authentication System
+
+#### Phase 1: Backend User System
+1. **Database Schema**
+   - Users table: id, username, email, password_hash
+   - Credentials table: userId, platform (bluesky|mastodon), handle, token/password (encrypted)
+
+2. **Auth Endpoints**
+   - `POST /auth/signup` - Register user
+   - `POST /auth/login` - Authenticate, return JWT
+   - `POST /auth/add-credential` - User adds Bluesky app password or Mastodon token
+   - `GET /auth/credentials` - Get user's connected platforms
+
+3. **Update Interaction Endpoints**
+   - Add JWT verification middleware
+   - Update `/interactions/like` and `/interactions/repost` to:
+     - Extract user ID from JWT
+     - Fetch user's stored credentials from database
+     - Use user's credentials (not dev credentials) for API calls
+
+#### Phase 2: Frontend Auth UI
+1. Signup/login pages
+2. Credential management page (add Bluesky & Mastodon accounts)
+3. Auth state management (JWT storage, session handling)
+
+#### Timeline to Restore Functionality
+1. Build user system (backend)
+2. Build login UI (frontend)
+3. Log in with your account
+4. Add your Bluesky + Mastodon credentials
+5. Like/repost buttons will use YOUR credentials
+6. All interaction features can be tested
+
+### 🚨 Not Yet Started
+1. **Frontend interaction buttons** - No UI to call the new like/repost endpoints
+2. **Error handling** - Like/repost endpoints need token auth (user not yet logged in)
+
+## Architecture Overview
+
+### Backend Flow (Current)
+```
+GET /feed?sensitivity=50
+  ├─ Fetch Bluesky + Mastodon feeds
+  ├─ Normalize (extract images + links)
+  ├─ Merge + dedup
+  ├─ Sort (attempted but broken)
+  ├─ Enrich with AI detection (scan replies for AI keywords)
+  ├─ Apply sensitivity filter
+  └─ Return FeedItem[]
+```
+
+### FeedItem Structure (Updated)
 ```typescript
 {
   id: string;
-  cid?: string;                    // Bluesky only
-  platform: 'bluesky' | 'mastodon';
+  platform: "bluesky" | "mastodon";
   author: string;
   authorHandle: string;
-  authorDid?: string;              // Bluesky only
-  authorId?: string;               // Mastodon only
   text: string;
   timestamp: string;
+  images: string[];
+  links: Array<{url: string; title?: string}>;  // ← NEW
   likeCount: number;
   repostCount: number;
   replyCount: number;
-  liked: boolean;                  // NEW (added this session)
-  reposted: boolean;               // NEW (added this session)
-  images: string[];
-  links: any[];
+  liked: boolean;
+  reposted: boolean;
+  aiScore: number;
+  aiWarning: boolean;
+  aiBlocked: boolean;
+  aiEvidence: string[];
 }
 ```
 
-### Feed Flow
-1. **getBlueskyFeed()** → raw posts
-2. **getMastodonFeed()** → raw posts
-3. **normalizeBskyFeed()** → FeedItem[] (images from embed.images)
-4. **normalizeMastodonFeed()** → FeedItem[] (images from media_attachments, trying preview_url | url | thumbnail_url)
-5. **mergeFeedsWithDedup()** → sort by timestamp, optional dedup by text
-6. Return in GET `/feed`
+## API Endpoints
 
-### Current Issue: Mastodon Images
-- Backend is fetching Mastodon posts
-- Image extraction logic added with fallbacks (preview_url → url → thumbnail_url)
-- Debug logging added to see what's happening
-- Need to check Render logs for: `📡 Fetching Mastodon feed...`, `✅ Mastodon fetched X posts`, `📸 First post has X media attachments`
+### Feed
+- `GET /feed?sensitivity=0-100` → Unified feed
 
----
+### Interactions (NEW)
+- `POST /interactions/like` - Like/unlike post
+- `POST /interactions/repost` - Repost/unrepost post
+- `POST /interactions/reply` - Reply to post (existing)
+- `POST /interactions/follow` - Follow user (existing)
+- `GET /interactions/comments/:platform/:postId` - Fetch replies (existing)
 
-## Deploy Commands
+## Frontend Structure
+- `src/app/page.tsx` - Main page, all routes in one file
+- Filter bars (sensitivity slider)
+- Feed display (posts)
+- Platform bubbles (feed sources)
 
-### Frontend
-```bash
-cd ~/Desktop/baleen-frontend
-cp ~/Downloads/page.tsx src/app/page.tsx
-git add src/app/page.tsx
-git commit -m "message"
-git push
-```
-Refresh: `Cmd + Shift + R`
+## Next Session: Build Interaction UI
 
-### Backend
-```bash
-cd ~/Desktop/baleen-backend
-cp ~/Downloads/[file].ts src/[path]/[file].ts
-git add src/[path]/[file].ts
-git commit -m "message"
-git push
-```
-Wait 2-3 min for Render rebuild.
+### Priority 1: Link Cards
+- [ ] Create LinkCard component
+- [ ] Render `post.links` in feed
+- [ ] Link opens in new tab
 
----
+### Priority 2: Interaction Buttons
+- [ ] Like button (calls `POST /interactions/like`)
+- [ ] Repost button (calls `POST /interactions/repost`)
+- [ ] Update local state on success
+- [ ] Need user auth token (TBD)
 
-## Session History
+### Priority 3: Deep Links
+- [ ] Make post clickable → opens original on platform
+- [ ] Format: bluesky.app/profile/.../post/... or mastodon.social/@.../...
 
-### Session 1 (Previous)
-- Built complete landing + feed + control panel architecture
-- Integrated Bluesky + Mastodon feeds
-- Styled with ocean/bioluminescent theme
-- Deployed to Netlify + Render
-- Added whale image to feeds page
+### Technical Debt
+- Chronological sort not working (backend issue)
+- No user authentication for interactions
+- Frontend needs refactor (all in page.tsx)
 
-### Session 2 (This Session - In Progress)
-- ✅ Added landing page with whale + tagline
-- ✅ Increased landing time to 5 seconds with fade-out
-- ✅ Consistent IIB + Baleen branding across all pages
-- ✅ Feed sorting chronologically to mix platforms
-- ✅ Reduced post avatars (48px → 36px)
-- ✅ Enlarged SM source icons (80px → 100px, emoji 32px → 40px)
-- ✅ Enlarged platform badges (10px → 20px)
-- 🔄 **Debugging Mastodon image extraction** - logs added, awaiting feedback
+## Files to Know
+- **Backend routes**: `src/routes/feed.ts`, `src/routes/interactions.ts`
+- **Backend services**: `src/services/blueskyClient.ts`, `src/services/mastodonClient.ts`
+- **Normalizer**: `src/services/feedNormalizer.ts` (link extraction here)
+- **Frontend**: `src/app/page.tsx` (entire UI)
 
----
+## Deployment
+- Backend: Push to GitHub → Render auto-deploys
+- Frontend: Push to GitHub → Netlify auto-deploys
+- Both rebuild in ~2 min
 
-## Known Issues & Next Steps
-
-### Priority 1: Mastodon Images
-- Images not displaying despite media_attachments in API response
-- Debug logs deployed to see URL extraction
-- Action: Check Render logs for media attachment info
-
-### Priority 2: Threads OAuth
-- `/auth/threads/login` returns 404
-- Files exist on GitHub (threadsClient.ts, auth.ts created earlier)
-- Need to verify they're actually deployed on Render
-
-### Nice-to-Have: Completed Features
-- ✅ Whale image in control panel feeds mode
-- ✅ Landing page splash
-- ✅ Chronological feed mixing
-- ✅ Responsive sizing
-
----
-
-## Working Rules (from Paul's preferences)
-1. **One step at a time** - no multi-feature changes
-2. **Always repaste full files** - never just code snippets
-3. **Always specify which file** being updated
-4. **Download files automatically** after changes (no "download when you need it")
-5. **Never modify splash page** without asking
-6. **Show updated file** visually after edits
-
----
-
-## File Locations
-- Frontend: `/Users/paul/Desktop/baleen-frontend`
-- Backend: `/Users/paul/Desktop/baleen-backend`
-- Downloads: `~/Downloads/page.tsx`, `~/Downloads/feedNormalizer.ts`, etc.
+## Working Rules
+1. Always present files BEFORE terminal commands
+2. Specify TERMINAL vs BROWSER CONSOLE
+3. One change at a time
+4. Use `/home/claude/` or `~/Downloads/` (not `/mnt/user-data/outputs/`)
