@@ -16,6 +16,20 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
       });
     }
 
+    // Extract links from facets
+    const links: Array<{url: string; title?: string}> = [];
+    if (post.record?.facets && Array.isArray(post.record.facets)) {
+      post.record.facets.forEach((facet: any) => {
+        if (facet.features && Array.isArray(facet.features)) {
+          facet.features.forEach((feature: any) => {
+            if (feature.$type === "app.bsky.richtext.facet#link" && feature.uri) {
+              links.push({url: feature.uri});
+            }
+          });
+        }
+      });
+    }
+
     return {
       id: post.uri || post.id,
       cid: post.cid,
@@ -31,7 +45,7 @@ export function normalizeBskyFeed(rawFeed: any[]): FeedItem[] {
       liked: false,
       reposted: false,
       images,
-      links: [],
+      links,
     };
   });
 }
@@ -65,6 +79,15 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
       images.push(post.card.image);
     }
 
+    // Extract links from card
+    const links: Array<{url: string; title?: string}> = [];
+    if (post.card?.url) {
+      links.push({
+        url: post.card.url,
+        title: post.card.title
+      });
+    }
+
     // Clean HTML from text
     const cleanText = post.content
       ? post.content.replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
@@ -84,7 +107,7 @@ export function normalizeMastodonFeed(rawFeed: any[]): FeedItem[] {
       liked: false,
       reposted: false,
       images,
-      links: [],
+      links,
     };
   });
 }
