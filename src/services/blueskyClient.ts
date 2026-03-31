@@ -7,7 +7,7 @@ let blueskyDid: string = "";
 export async function initBlueskySession() {
   const { BLUESKY_IDENTIFIER, BLUESKY_APP_PASSWORD } = process.env;
   if (!BLUESKY_IDENTIFIER || !BLUESKY_APP_PASSWORD) {
-    console.warn("Bluesky credentials missing");
+    console.warn("⚠️  Bluesky dev credentials not set in environment");
     return;
   }
   try {
@@ -17,22 +17,48 @@ export async function initBlueskySession() {
     });
     blueskyAuthToken = response.data.accessJwt;
     blueskyDid = response.data.did;
-    console.log("✅ Bluesky session initialized");
+    console.log("✅ Bluesky dev session initialized");
   } catch (error) {
-    console.error("❌ Bluesky auth failed:", error);
+    console.error("❌ Bluesky dev auth failed:", error);
   }
 }
 
-export async function getBlueskyFeed() {
-  if (!blueskyAuthToken) {
-    console.warn("Bluesky not authenticated");
+/**
+ * Get Bluesky feed using user credentials (if provided) or dev credentials (fallback)
+ * @param userCredential - Optional user credentials {handle, token}
+ * @returns Array of feed posts
+ */
+export async function getBlueskyFeed(userCredential?: { handle: string; token: string }) {
+  let authToken = blueskyAuthToken;
+  
+  // Use user credentials if provided
+  if (userCredential) {
+    console.log(`📱 Using user credentials for Bluesky (${userCredential.handle})`);
+    try {
+      const response = await axios.post(`${BSKY_API}/com.atproto.server.createSession`, {
+        identifier: userCredential.handle,
+        password: userCredential.token,
+      });
+      authToken = response.data.accessJwt;
+      console.log(`✅ Bluesky user session created`);
+    } catch (error) {
+      console.error("❌ Bluesky user auth failed:", error);
+      console.log("⚠️  Falling back to dev credentials...");
+      // Fall through to use dev token
+    }
+  }
+  
+  if (!authToken) {
+    console.warn("⚠️  Bluesky not authenticated (no user or dev credentials)");
     return [];
   }
+  
   try {
     const response = await axios.get(`${BSKY_API}/app.bsky.feed.getTimeline`, {
       params: { limit: 30 },
-      headers: { Authorization: `Bearer ${blueskyAuthToken}` },
+      headers: { Authorization: `Bearer ${authToken}` },
     });
+    console.log(`✅ Bluesky feed fetched: ${response.data.feed?.length || 0} posts`);
     return response.data.feed || [];
   } catch (error) {
     console.error("❌ Bluesky feed fetch failed:", error);
@@ -94,111 +120,4 @@ export async function repostBlueskyPost(uri: string, cid: string, action: 'repos
     console.error("❌ Bluesky repost action failed:", error);
     throw error;
   }
-}
-
-// NEW FUNCTIONS FOR INTERACTIONS
-
-export async function getBlueskyPostThread(uri: string) {
-  if (!blueskyAuthToken) {
-    console.warn("Bluesky not authenticated");
-    return { post: null, replies: [] };
-  }
-
-  try {
-    const response = await axios.get(`${BSKY_API}/app.bsky.feed.getPostThread`, {
-      params: { uri, depth: 1, limit: 10 },
-      headers: { Authorization: `Bearer ${blueskyAuthToken}` },
-    });
-
-    const thread = response.data.thread;
-    const replies: any[] = [];
-
-    if (thread && thread.replies && Array.isArray(thread.replies)) {
-      thread.replies.forEach((reply: any) => {
-        if (reply.post && reply.post.record) {
-          replies.push({
-            id: reply.post.uri,
-            author: reply.post.author?.displayName || reply.post.author?.handle,
-            authorHandle: reply.post.author?.handle,
-            text: reply.post.record.text,
-            timestamp: reply.post.record.createdAt,
-            likeCount: reply.post.likeCount || 0,
-          });
-        }
-      });
-    }
-
-    return {
-      post: thread?.post || null,
-      replies: replies.slice(0, 10),
-    };
-  } catch (error) {
-    console.error("❌ Failed to fetch post thread:", error);
-    return { post: null, replies: [] };
-  }
-}
-
-export async function replyToBlueskyPost(
-  postUri: string,
-  postCid: string,
-  replyText: string
-) {
-  if (!blueskyAuthToken || !blueskyDid) {
-    throw new Error("Bluesky not authenticated");
-  }
-
-  try {
-    const response = await axios.post(
-      `${BSKY_API}/com.atproto.repo.createRecord`,
-      {
-        repo: blueskyDid,
-        collection: "app.bsky.feed.post",
-        record: {
-          text: replyText,
-          reply: {
-            root: { uri: postUri, cid: postCid },
-            parent: { uri: postUri, cid: postCid },
-          },
-          createdAt: new Date().toISOString(),
-        },
-      },
-      { headers: { Authorization: `Bearer ${blueskyAuthToken}` } }
-    );
-
-    return { success: true, replyUri: response.data.uri };
-  } catch (error) {
-    console.error("❌ Failed to reply:", error);
-    throw error;
-  }
-}
-
-export async function followBlueskyUser(userDid: string) {
-  if (!blueskyAuthToken || !blueskyDid) {
-    throw new Error("Bluesky not authenticated");
-  }
-
-  try {
-    const response = await axios.post(
-      `${BSKY_API}/com.atproto.repo.createRecord`,
-      {
-        repo: blueskyDid,
-        collection: "app.bsky.graph.follow",
-        record: {
-          subject: userDid,
-          createdAt: new Date().toISOString(),
-        },
-      },
-      { headers: { Authorization: `Bearer ${blueskyAuthToken}` } }
-    );
-
-    return { success: true, followUri: response.data.uri };
-  } catch (error) {
-    console.error("❌ Failed to follow user:", error);
-    throw error;
-  }
-}
-
-export async function unfollowBlueskyUser(userDid: string) {
-  console.log("Unfollow would delete the follow record for:", userDid);
-  return { success: true };
 }
